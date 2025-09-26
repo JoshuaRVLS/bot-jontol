@@ -6,7 +6,11 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import type { Command } from "../../@types/type";
-import db, { addNewUser, getUserData, isUserExists } from "../../utils/db";
+import db, {
+  addNewUser,
+  getUserData,
+  isUserExists,
+} from "../../utils/Database";
 
 export default {
   type: "command",

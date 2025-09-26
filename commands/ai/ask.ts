@@ -7,7 +7,7 @@ import {
 import { Command } from "../../@types/type";
 import OpenAI from "openai";
 import { ChatCompletionMessage } from "openai/resources";
-import ai from "../../utils/ai";
+import ai from "../../utils/AI";
 
 export default {
   type: "command",

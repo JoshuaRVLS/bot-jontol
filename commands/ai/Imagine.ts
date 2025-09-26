@@ -5,7 +5,7 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import { Command } from "../../@types/type";
-import ai from "../../utils/ai";
+import ai from "../../utils/AI";
 
 export default {
   type: "command",
