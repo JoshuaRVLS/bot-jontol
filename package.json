@@ -1,0 +1,27 @@
+{
+  "name": "dcbot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx --watch index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.80",
+    "@prisma/extension-accelerate": "^2.0.2",
+    "cli-table": "^0.3.11",
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.2",
+    "openai": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.16.2",
+    "prisma": "^6.16.2"
+  },
+  "description": ""
+}
