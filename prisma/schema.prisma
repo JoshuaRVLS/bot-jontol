@@ -17,7 +17,23 @@ datasource db {
 model User {
   id        String   @id @map("_id")
   bank      Float    @default(0)
-  wallet    Float    @default(0)
+  wallet    Float    @default(100000)
   lastDaily DateTime?
+  lastWork  DateTime?
+  lastRob   DateTime?
+  lastCrime DateTime?
+  inventory Json     @default("{}")
+  xp        Int      @default(0)
+  level     Int      @default(1)
   createdAt DateTime @default(now())
+  warnings  Warning[]
+}
+
+model Warning {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String
+  moderatorId String
+  reason      String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
 }
