@@ -3,7 +3,7 @@ import { Command } from "../../types/type";
 import { addWallet, getUserData } from "../../utils/Database";
 import db from "../../utils/Database";
 
-const DAILY_AMOUNT = 500;
+const DAILY_AMOUNT = 50000;
 
 export default {
     type: "command",
