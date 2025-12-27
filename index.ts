@@ -1,98 +1,93 @@
 import {
-  Client,
-  GatewayIntentBits,
   Events,
   REST,
   Routes,
   Collection,
 } from "discord.js";
-import dotenv from "dotenv";
-import fs from "fs/promises";
-import { ButtonEvent, ClientEvent, Command } from "./@types/type";
+import { ButtonEvent, ClientEvent, Command, ModalEvent } from "./types/type";
 import ExtendedClient from "./ExtendedClient/ExtendedClient";
-
-dotenv.config();
+import { config } from "./utils/env";
+import { loadFiles } from "./utils/fileLoader";
 
 const client = new ExtendedClient();
 
 (async () => {
-  const commandFiles = (
-    await fs.readdir("commands", { recursive: true })
-  ).filter(
-    (file) =>
-      file.endsWith(".js") || file.endsWith(".ts") || file.endsWith(".mjs")
-  );
-  const clientEventFiles = (
-    await fs.readdir("handlers/events", { recursive: true })
-  ).filter(
-    (file) =>
-      file.endsWith(".js") || file.endsWith(".ts") || file.endsWith(".mjs")
-  );
-  const buttonEventFiles = (
-    await fs.readdir("handlers/buttons", { recursive: true })
-  ).filter(
-    (file) =>
-      file.endsWith(".js") || file.endsWith(".ts") || file.endsWith(".mjs")
-  );
+  const commandFiles = await loadFiles("commands");
+  const clientEventFiles = await loadFiles("handlers/events");
+  const buttonEventFiles = await loadFiles("handlers/buttons");
 
   client.commands = new Collection<string, Command>();
   client.clientEvents = new Collection<string, ClientEvent>();
   client.buttonEvents = new Collection<string, ButtonEvent>();
+  client.modalEvents = new Collection<string, ModalEvent>();
 
-  for (let file of commandFiles) {
+  for (const file of commandFiles) {
     try {
-      const command: Command = (await import(`./commands/${file}`)).default;
+      const commandModule = await import(`./commands/${file}`);
+      const command: Command = commandModule.default;
+
       if (
+        command &&
         command.type === "command" &&
-        command.data.name &&
-        command.data.description
+        command.data?.name &&
+        command.data?.description
       ) {
         client.commands.set(command.data.name, command);
+      } else {
+        console.warn(`[WARNING] The command at ${file} is missing a required "data" or "execute" property.`);
       }
     } catch (error) {
-      console.log(error);
+      console.error(`[ERROR] Error loading command ${file}:`, error);
     }
   }
 
-  for (let file of clientEventFiles) {
+  for (const file of clientEventFiles) {
     try {
-      const event: ClientEvent = (await import(`./handlers/events/${file}`))
-        .default;
+      const eventModule = await import(`./handlers/events/${file}`);
+      const event: ClientEvent = eventModule.default;
 
-      if (event.type === "event" && event.name) {
+      if (event && event.type === "event" && event.name) {
         client.clientEvents.set(event.name, event);
       }
     } catch (error) {
-      console.log(error);
+      console.error(`[ERROR] Error loading event ${file}:`, error);
     }
   }
 
-  for (let file of buttonEventFiles) {
+  for (const file of buttonEventFiles) {
     try {
-      const buttonEvent: ButtonEvent = (
-        await import(`./handlers/buttons/${file}`)
-      ).default;
+      const buttonModule = await import(`./handlers/buttons/${file}`);
+      const buttonEvent: ButtonEvent = buttonModule.default;
 
-      if (buttonEvent.type === "button" && buttonEvent.id) {
+      if (buttonEvent && buttonEvent.type === "button" && buttonEvent.id) {
         client.buttonEvents.set(buttonEvent.id, buttonEvent);
       }
     } catch (error) {
-      console.log(error);
+      console.error(`[ERROR] Error loading button event ${file}:`, error);
     }
   }
 
-  const rest = new REST({ version: "10" }).setToken(
-    process.env.TOKEN as string
-  );
+  const modalFiles = await loadFiles("handlers/modals");
+  for (const file of modalFiles) {
+    try {
+      const modalModule = await import(`./handlers/modals/${file}`);
+      const modalEvent: ModalEvent = modalModule.default;
+
+      if (modalEvent && modalEvent.type === "modal" && modalEvent.id) {
+        client.modalEvents.set(modalEvent.id, modalEvent);
+      }
+    } catch (error) {
+      console.error(`[ERROR] Error loading modal event ${file}:`, error);
+    }
+  }
+
+  const rest = new REST({ version: "10" }).setToken(config.TOKEN);
 
   try {
     console.log("Started refreshing application (/) commands.");
 
     await rest.put(
-      Routes.applicationGuildCommands(
-        process.env.CLIENT_ID as string,
-        process.env.GUILD_ID as string
-      ),
+      Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID),
       {
         body: client.commands.map((command) => command.data.toJSON()),
       }
@@ -103,9 +98,10 @@ const client = new ExtendedClient();
     console.error(error);
   }
 
-  console.table(client.commands);
-  console.table(client.clientEvents);
-  console.table(client.buttonEvents);
+  // console.table calls removed for cleaner output
+  console.log(`Loaded ${client.commands.size} commands.`);
+  console.log(`Loaded ${client.clientEvents.size} events.`);
+  console.log(`Loaded ${client.buttonEvents.size} buttons.`);
 
   client.clientEvents.forEach((event) => {
     if (event.once) {
@@ -118,5 +114,6 @@ const client = new ExtendedClient();
       });
     }
   });
-  await client.login(process.env.TOKEN);
+
+  await client.login(config.TOKEN);
 })();
