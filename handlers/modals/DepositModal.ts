@@ -31,10 +31,28 @@ export default {
         try {
             await removeWallet(userId, amount);
             await addBank(userId, amount);
-            await interaction.reply({ content: `✅ Berhasil deposit **${amount}** coins ke bank!`, ephemeral: true });
+
+            // Update Embed
+            // Fetch fresh data
+            const updatedUserData = await getUserData(userId);
+            const { createBalanceEmbed } = await import("../../utils/uiFactory");
+
+            const newEmbed = createBalanceEmbed(interaction.user, updatedUserData);
+
+            // Update the message that triggered the modal (if applicable)
+            await (interaction as any).update({
+                content: `✅ Berhasil deposit **${amount.toLocaleString()}** coins ke bank!`,
+                embeds: [newEmbed],
+                components: [(await import("../../utils/uiFactory")).createBalanceButtons()]
+            });
+
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: "Gagal deposit, database lagi error keknya.", ephemeral: true });
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: "Gagal deposit, database lagi error keknya.", ephemeral: true });
+            } else {
+                await interaction.reply({ content: "Gagal deposit, database lagi error keknya.", ephemeral: true });
+            }
         }
     },
 } as ModalEvent;
