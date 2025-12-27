@@ -9,7 +9,11 @@ class ExtendedClient extends Client {
 
   constructor() {
     super({
-      intents: [GatewayIntentBits.Guilds],
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+      ],
     });
     this.commands = new Collection();
     this.clientEvents = new Collection();
