@@ -10,12 +10,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id String @unique @id
-  bank Float @default(0)
-  wallet Float @default(0)
+  id        String   @id @map("_id")
+  bank      Float    @default(0)
+  wallet    Float    @default(0)
+  lastDaily DateTime?
+  createdAt DateTime @default(now())
 }

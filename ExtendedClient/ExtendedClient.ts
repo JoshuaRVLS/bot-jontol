@@ -1,10 +1,11 @@
 import { Client, Collection, GatewayIntentBits } from "discord.js";
-import { ButtonEvent, ClientEvent, Command } from "../@types/type";
+import { ButtonEvent, ClientEvent, Command, ModalEvent } from "../types/type";
 
 class ExtendedClient extends Client {
   public commands: Collection<string, Command>;
   public clientEvents: Collection<string, ClientEvent>;
   public buttonEvents: Collection<string, ButtonEvent>;
+  public modalEvents: Collection<string, ModalEvent>;
 
   constructor() {
     super({
@@ -13,6 +14,7 @@ class ExtendedClient extends Client {
     this.commands = new Collection();
     this.clientEvents = new Collection();
     this.buttonEvents = new Collection();
+    this.modalEvents = new Collection();
   }
 }
 

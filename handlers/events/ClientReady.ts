@@ -1,5 +1,5 @@
 import { Events } from "discord.js";
-import { ClientEvent } from "../../@types/type";
+import { ClientEvent } from "../../types/type";
 
 export default {
   once: true,
