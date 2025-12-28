@@ -13,6 +13,7 @@ interface Config {
     CLIENT_ID: string;
     GUILD_ID: string;
     DATABASE_URL: string;
+    OPENROUTER_KEY: string;
 }
 
 const requiredEnvVars = [
@@ -20,6 +21,7 @@ const requiredEnvVars = [
     "CLIENT_ID",
     "GUILD_ID",
     "DATABASE_URL",
+    "OPENROUTER_KEY",
 ] as const;
 
 for (const envVar of requiredEnvVars) {
@@ -33,4 +35,5 @@ export const config: Config = {
     CLIENT_ID: process.env.CLIENT_ID!,
     GUILD_ID: process.env.GUILD_ID!,
     DATABASE_URL: process.env.DATABASE_URL!,
+    OPENROUTER_KEY: process.env.OPENROUTER_KEY!,
 };

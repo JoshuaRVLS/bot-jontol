@@ -1,4 +1,4 @@
-import { Client, Events, Interaction } from "discord.js";
+import { Client, Events, Interaction, MessageFlags } from "discord.js";
 import { ClientEvent } from "../../types/type";
 import ExtendedClient from "../../ExtendedClient/ExtendedClient";
 
@@ -15,6 +15,40 @@ export default {
           return;
         }
         await command.execute(interaction);
+
+        // --- COMMAND XP REWARD & METADATA SYNC ---
+        try {
+          const xpGained = Math.floor(Math.random() * 11) + 5; // 5-15 XP
+          const { default: prisma } = await import("../../utils/Database");
+
+          // Sync name and avatar
+          await prisma.user.upsert({
+            where: { id: interaction.user.id },
+            update: {
+              name: interaction.user.username,
+              avatar: interaction.user.displayAvatarURL(),
+            },
+            create: {
+              id: interaction.user.id,
+              name: interaction.user.username,
+              avatar: interaction.user.displayAvatarURL(),
+            },
+          });
+
+          const { addXp } = await import("../../utils/Database");
+          const { leveledUp, newLevel } = await addXp(interaction.user.id, xpGained);
+
+          if (leveledUp) {
+            const levelMsg = `🎊 **LEVEL UP!** Selamat bang ${interaction.user.username}, lu sekarang **Level ${newLevel}**!`;
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp({ content: levelMsg });
+            } else {
+              await interaction.reply({ content: levelMsg });
+            }
+          }
+        } catch (xpError) {
+          console.error("Error awarding command XP:", xpError);
+        }
       } else if (interaction.isButton()) {
         const buttonEvent = client.buttonEvents.get(interaction.customId);
         if (buttonEvent) {
@@ -32,9 +66,9 @@ export default {
       if (interaction.isRepliable()) {
         const content = "There was an error while executing this command!";
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content, ephemeral: true });
+          await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
         } else {
-          await interaction.reply({ content, ephemeral: true });
+          await interaction.reply({ content, flags: MessageFlags.Ephemeral });
         }
       }
     }

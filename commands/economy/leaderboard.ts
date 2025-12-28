@@ -15,7 +15,8 @@ export default {
                 .setRequired(true)
                 .addChoices(
                     { name: "Sultan (Kekayaan)", value: "money" },
-                    { name: "Sepuh (Level)", value: "level" }
+                    { name: "Sepuh (Level)", value: "level" },
+                    { name: "Rajin (Streak)", value: "streak" }
                 )),
     execute: async (interaction) => {
         if (!interaction.isChatInputCommand()) return;
@@ -30,21 +31,32 @@ export default {
             let description = "";
 
             if (type === "money") {
-                // Top 10 Richest (Bank + Wallet)
-                // Note: Prisma can't easily sort by sum of fields in simplified query.
-                // We'll fetch top by Bank for now or fetch all and sort (expensive if many users).
-                // Let's sort by Bank as primary indicator of wealth.
+                // Fetch all users to calculate networth (Wallet + Bank + Investments + CS Skins)
+                const allUsers = await prisma.user.findMany();
 
-                users = await prisma.user.findMany({
-                    orderBy: { bank: 'desc' },
-                    take: 10
+                const usersWithNetworth = allUsers.map(u => {
+                    const wallet = u.wallet || 0;
+                    const bank = u.bank || 0;
+
+                    // Sum investments
+                    const investments = (u.investments as Record<string, number>) || {};
+                    const totalInvestments = Object.values(investments).reduce((acc, val) => acc + (val || 0), 0);
+
+                    // Sum CS:GO Skins
+                    const inv = (u.inventory as any) || {};
+                    const skins = Array.isArray(inv.csSkins) ? inv.csSkins : [];
+                    const totalSkinsValue = skins.reduce((acc: number, s: any) => acc + (s.marketPrice || 0), 0);
+
+                    const networth = wallet + bank + totalInvestments + totalSkinsValue;
+
+                    return { ...u, networth };
                 });
-                title = "🏆 Top 10 Sultan Server";
-            } else {
-                // Top 10 Highest Level
-                // Sort array to be sure if using complex sort? No, Prisma dict syntax:
-                // orderBy: [{ level: 'desc' }, { xp: 'desc' }] works.
-                // Re-query for explicit sort
+
+                // Sort by networth
+                usersWithNetworth.sort((a, b) => b.networth - a.networth);
+                users = usersWithNetworth.slice(0, 10);
+                title = "🏆 Top 10 Sultan Server (Networth)";
+            } else if (type === "level") {
                 users = await prisma.user.findMany({
                     orderBy: [
                         { level: 'desc' },
@@ -53,6 +65,13 @@ export default {
                     take: 10
                 });
                 title = "🔰 Top 10 Sepuh Server";
+            } else {
+                // Top 10 Daily Streak
+                users = await prisma.user.findMany({
+                    orderBy: { dailyStreak: 'desc' },
+                    take: 10
+                });
+                title = "🔥 Top 10 Streak Terpanjang";
             }
 
             if (users.length === 0) {
@@ -78,10 +97,11 @@ export default {
                 description += `** ${medal} ${username}**\n`;
 
                 if (type === "money") {
-                    const totalWealth = user.wallet + user.bank;
-                    description += `💰 Total: ** ${formatRupiah(totalWealth)}** (Bank: ${formatRupiah(user.bank)}) \n\n`;
+                    description += `💰 Networth: **${formatRupiah((user as any).networth)}**\n> *(Wallet+Bank+Invest+Skins)*\n\n`;
+                } else if (type === "level") {
+                    description += `🔰 Level: **${user.level}** (XP: ${user.xp})\n\n`;
                 } else {
-                    description += `🔰 Level: ** ${user.level}** (XP: ${user.xp}) \n\n`;
+                    description += `🔥 Streak: **${user.dailyStreak || 0} hari**\n\n`;
                 }
             }
 

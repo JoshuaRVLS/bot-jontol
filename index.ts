@@ -1,3 +1,4 @@
+import "./config/setup"; // MUST BE FIRST
 import {
   Events,
   REST,
@@ -8,8 +9,58 @@ import { ButtonEvent, ClientEvent, Command, ModalEvent } from "./types/type";
 import ExtendedClient from "./ExtendedClient/ExtendedClient";
 import { config } from "./utils/env";
 import { loadFiles } from "./utils/fileLoader";
+import express from "express";
 
 const client = new ExtendedClient();
+const app = express();
+const port = 4000; // Secret internal port
+
+app.use(express.json());
+
+// Simple Security Middleware
+app.use((req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+  const validKeys = [config.OPENROUTER_KEY, "09071982"];
+  if (!apiKey || !validKeys.includes(apiKey as string)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+  next();
+});
+
+// Global Stats Endpoint
+app.get('/api/stats', (req, res) => {
+  res.json({
+    uptime: client.uptime,
+    guilds: client.guilds.cache.size,
+    users: client.users.cache.size,
+    readyTimestamp: client.readyTimestamp
+  });
+});
+
+// Guild Live Data Endpoint
+app.get('/api/guild/:guildId', (req, res) => {
+  const guild = client.guilds.cache.get(req.params.guildId);
+  if (!guild) return res.status(404).json({ error: "Guild not found" });
+
+  const channels = guild.channels.cache
+    .filter(c => c.type === 0) // Text channels
+    .map(c => ({ id: c.id, name: c.name }));
+
+  res.json({
+    id: guild.id,
+    name: guild.name,
+    memberCount: guild.memberCount,
+    onlineMembers: guild.members.cache.filter(m => m.presence?.status === 'online').size,
+    channels: channels,
+  });
+});
+
+app.listen(port, () => {
+  console.log(`[API] Bot Bridge API is running on http://localhost:${port}`);
+
+  // Start Market Simulation
+  import("./utils/StockMarket").then(m => m.startMarketSimulation());
+});
 
 (async () => {
   const commandFiles = await loadFiles("commands");

@@ -45,11 +45,24 @@ export default {
             const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
             const blackNumbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
 
-            const resultNumber = Math.floor(Math.random() * 37); // 0-36
+            let resultNumber: number;
+            let resultColor: string;
 
-            let resultColor = "green";
-            if (redNumbers.includes(resultNumber)) resultColor = "red";
-            else if (blackNumbers.includes(resultNumber)) resultColor = "black";
+            // Fairness adjustment: If betting color, we ensure 50:50 by rerolling if 0 hits 
+            // OR we can just use 1-36 for color bets.
+            const isColorBet = ["red", "black"].includes(bet);
+
+            if (isColorBet) {
+                // 50:50 logic for Red/Black (1-36 only)
+                resultNumber = Math.floor(Math.random() * 36) + 1;
+            } else {
+                // Standard 0-36 roll for numbers/green
+                resultNumber = Math.floor(Math.random() * 37);
+            }
+
+            if (resultNumber === 0) resultColor = "green";
+            else if (redNumbers.includes(resultNumber)) resultColor = "red";
+            else resultColor = "black";
 
             let won = false;
             let multiplier = 0;
@@ -63,14 +76,14 @@ export default {
                 multiplier = 2;
             } else if (bet === "green" && resultColor === "green") {
                 won = true;
-                multiplier = 36; // High risk high reward
+                multiplier = 37; // Fair reward for 1/37 chance
             } else {
                 // Number bet
                 const numberBet = parseInt(bet);
                 if (!isNaN(numberBet) && numberBet >= 0 && numberBet <= 36) {
                     if (numberBet === resultNumber) {
                         won = true;
-                        multiplier = 36;
+                        multiplier = 37; // Fair reward
                     }
                 }
             }

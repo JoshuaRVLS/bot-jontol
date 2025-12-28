@@ -1,7 +1,10 @@
 import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../../types/type";
-import { addWallet, getUserData, removeWallet, removeItem, getInventory } from "../../utils/Database";
+import { addWallet, getUserData, removeWallet, removeItem, getInventory, claimBounty } from "../../utils/Database";
 import { formatRupiah } from "../../utils/format";
+import prisma from "../../utils/Database";
+import { getPlayerModifiers, applyBonus, applyCooldown } from "../../utils/economyHelper";
+import { generateEconomyResponse } from "../../utils/aiHelper";
 
 export default {
     type: "command",
@@ -27,77 +30,89 @@ export default {
         try {
             const userData = await getUserData(userId);
             const targetData = await getUserData(targetUser.id);
+            const userMods = await getPlayerModifiers(userId);
+            const targetMods = await getPlayerModifiers(targetUser.id);
 
-            // Cooldown check (e.g. 1 hour)
+            // Cooldown check
             const lastRobCheck = userData.lastRob ? new Date(userData.lastRob).getTime() : 0;
-            const cooldown = 60 * 60 * 1000; // 1 hour
+            const BASE_COOLDOWN = 60 * 60 * 1000; // 1 hour
+            const actualCooldownMs = applyCooldown(BASE_COOLDOWN, userMods.cooldownReduction || 0);
 
-            if (now.getTime() - lastRobCheck < cooldown) {
-                const timeLeft = Math.ceil((cooldown - (now.getTime() - lastRobCheck)) / 1000 / 60);
-                return interaction.followUp(`🚫 **COOLDOWN!** Lu masih buronan. Tunggu **${timeLeft} menit** lagi.`);
+            if (now.getTime() - lastRobCheck < actualCooldownMs) {
+                const timeLeftMin = Math.ceil((actualCooldownMs - (now.getTime() - lastRobCheck)) / 1000 / 60);
+                const aiMsg = await generateEconomyResponse("rob-cooldown", `Lu masih dicari polisi, sisa cooldown ${timeLeftMin} menit.`);
+                return interaction.followUp(aiMsg || `🚫 **COOLDOWN!** Lu masih buronan. Tunggu **${timeLeftMin} menit** lagi.`);
             }
 
-            // Check if user has enough money to pay fine if caught (min 10k)
             if (userData.wallet < 10000) {
-                return interaction.followUp("Lu butuh minimal **Rp10.000** buat modal maling (bwat bayar denda kalo ketangkep).");
+                return interaction.followUp("Lu butuh minimal **Rp10.000** buat modal maling.");
             }
 
-            // Check target wallet
             if (targetData.wallet < 1000) {
                 return interaction.followUp("Target miskin banget, gak worth it dimaling.");
             }
 
-            // Check Shield
+            // High priority: Hard Shield
             const targetInv = await getInventory(targetUser.id);
             if (targetInv["shield"] && targetInv["shield"] > 0) {
-                // Shield logic: 50% chance to block completely, 50% chance it fails? 
-                // Description said 50% chance break. Let's make it always block but break 50% of time?
-                // Or "Melindungi... (1x pakai)".
-                // Let's make it simple: Shield BLOCKS the rob automatically, and is consumed.
-
                 await removeItem(targetUser.id, "shield", 1);
-
-                // Update cooldown for robber
                 await prisma.user.update({
                     where: { id: userId },
-                    data: { lastRob: now } // Cooldown triggers even on fail
+                    data: { lastRob: now }
                 });
 
-                return interaction.followUp(`🛡️ **GAGAL!** ${targetUser.username} pake **Preman Kampung (Shield)**! Preman-nya ngegebugin lu. Shield dia ancur.`);
+                const aiMsg = await generateEconomyResponse("rob-shield", `Target ${targetUser.username} uses Shield (Preman Kampung). Mob beat you up.`);
+                return interaction.followUp(aiMsg || `🛡️ **GAGAL!** ${targetUser.username} punya **Shield**! Shield dia ancur.`);
             }
 
             // Robbery Logic
-            const successChance = 0.4; // 40% base success
-            // Check Lockpick benefit
-            const userInv = await getInventory(userId);
-            const hasLockpick = userInv["lockpick"] && userInv["lockpick"] > 0;
+            const baseSuccess = 0.4;
+            const attackerBonus = userMods.robSuccess || 0;
+            const defenderBonus = targetMods.robProtection || 0;
 
-            const finalChance = hasLockpick ? successChance + 0.1 : successChance;
+            let finalChance = baseSuccess + attackerBonus - defenderBonus;
+            if (finalChance < 0.05) finalChance = 0.05;
+            if (finalChance > 0.95) finalChance = 0.95;
 
             const isSuccess = Math.random() < finalChance;
-
-            if (isSuccess) {
-                // Steal percentage (10% - 40% of wallet)
-                const percent = (Math.random() * 0.3) + 0.1;
-                const stealAmount = Math.floor(targetData.wallet * percent);
-
-                await removeWallet(targetUser.id, stealAmount);
-                await addWallet(userId, stealAmount);
-
-                await interaction.followUp(`😈 **SUKSES!** Lu berhasil maling **${formatRupiah(stealAmount)}** dari dompet ${targetUser.username}!`);
-            } else {
-                // Fail: Pay fine
-                const fine = 10000;
-                await removeWallet(userId, fine);
-
-                await interaction.followUp(`👮 **KETANGKEP!** Polisi nangkep lu. Denda **${formatRupiah(fine)}** harus dibayar.`);
-            }
 
             // Update cooldown
             await prisma.user.update({
                 where: { id: userId },
                 data: { lastRob: now }
             });
+
+            if (isSuccess) {
+                const percent = (Math.random() * 0.3) + 0.1;
+                const stealAmount = Math.floor(targetData.wallet * percent);
+
+                // Check and Claim Bounty
+                const bounty = await claimBounty(targetUser.id);
+                const bountyReward = bounty ? bounty.reward : 0;
+
+                await removeWallet(targetUser.id, stealAmount);
+                await addWallet(userId, stealAmount + bountyReward);
+
+                const aiMsg = await generateEconomyResponse("rob-success", `Stole ${formatRupiah(stealAmount)} from ${targetUser.username}. Win. ${bounty ? 'CLAIMED BOUNTY: ' + formatRupiah(bountyReward) : ''}`);
+
+                let response = aiMsg || `😈 **SUKSES!** Lu berhasil maling dari ${targetUser.username}!`;
+                if (bountyReward > 0) {
+                    response += `\n🎯 **BOUNTY CLAIMED:** Dapet tambahan **${formatRupiah(bountyReward)}**!`;
+                }
+                if (attackerBonus > 0) response += `\n✨ (Skills: +${Math.round(attackerBonus * 100)}% Success)`;
+
+                await interaction.followUp(response);
+            } else {
+                const fine = 10000;
+                const actualFine = userData.wallet < fine ? userData.wallet : fine;
+                await removeWallet(userId, actualFine);
+
+                const aiMsg = await generateEconomyResponse("rob-fail", `Caught while robbing ${targetUser.username}. Fine: ${formatRupiah(actualFine)}.`);
+                let response = aiMsg || `👮 **KETANGKEP!** Denda **${formatRupiah(actualFine)}** melayang.`;
+                if (defenderBonus > 0) response += `\n🛡️ (Defense Target: +${Math.round(defenderBonus * 100)}%)`;
+
+                await interaction.followUp(response);
+            }
 
         } catch (error) {
             console.error(error);

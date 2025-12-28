@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction } from "discord.js";
 import { Command } from "../../types/type";
 import { addItem, getUserData, removeWallet } from "../../utils/Database";
 import { ITEMS, getItem } from "../../utils/gameItems";
@@ -17,8 +17,8 @@ export default {
         .addIntegerOption(option =>
             option.setName("amount")
                 .setDescription("Jumlah (default 1)")
-                .setMinValue(1)),
-    autocomplete: async (interaction) => {
+                .setMinValue(1)) as SlashCommandBuilder,
+    autocomplete: async (interaction: AutocompleteInteraction) => {
         const focusedValue = interaction.options.getFocused().toLowerCase();
         const choices = ITEMS.filter(item =>
             item.name.toLowerCase().includes(focusedValue) ||
@@ -28,9 +28,7 @@ export default {
             choices.map(choice => ({ name: `${choice.name} (${formatRupiah(choice.price)})`, value: choice.id })).slice(0, 25)
         );
     },
-    execute: async (interaction) => {
-        if (!interaction.isChatInputCommand()) return;
-
+    execute: async (interaction: ChatInputCommandInteraction) => {
         const itemId = interaction.options.getString("item_id", true);
         const amount = interaction.options.getInteger("amount") || 1;
         const userId = interaction.user.id;
@@ -51,12 +49,9 @@ export default {
             }
 
             await removeWallet(userId, totalPrice);
-            await addItem(userId, userId, amount); // Wait, logic error in calling addItem? 
-            // Previous addItem args: (userId, itemId, amount)
-            // Let's correct call
             await addItem(userId, itemId, amount);
 
-            await interaction.followUp(`✅ Berhasil membeli **${amount}x ${item.name}** seharga **${formatRupiah(totalPrice)}**!`);
+            await interaction.followUp(`Berhasil membeli **${amount}x ${item.name}** seharga **${formatRupiah(totalPrice)}**!`);
 
         } catch (error) {
             console.error(error);

@@ -2,6 +2,9 @@ import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../../types/type";
 import { addWallet, getUserData, removeWallet } from "../../utils/Database";
 import { formatRupiah } from "../../utils/format";
+import prisma from "../../utils/Database";
+import { getPlayerModifiers, applyBonus, applyCooldown } from "../../utils/economyHelper";
+import { generateEconomyResponse } from "../../utils/aiHelper";
 
 export default {
     type: "command",
@@ -18,25 +21,27 @@ export default {
 
         try {
             const userData = await getUserData(userId);
+            const mods = await getPlayerModifiers(userId);
 
-            // Cooldown 30 mins
+            // Cooldown 30 mins base
             const lastCrimeCheck = userData.lastCrime ? new Date(userData.lastCrime).getTime() : 0;
-            const cooldown = 30 * 60 * 1000;
+            const BASE_COOLDOWN_MS = 30 * 60 * 1000;
+            const actualCooldownMs = applyCooldown(BASE_COOLDOWN_MS, mods.cooldownReduction || 0);
 
-            if (now.getTime() - lastCrimeCheck < cooldown) {
-                const timeLeft = Math.ceil((cooldown - (now.getTime() - lastCrimeCheck)) / 1000 / 60);
-                return interaction.followUp(`🚫 **COOLDOWN!** Polisi masih nyariin lu. Sembunyi dulu **${timeLeft} menit**.`);
+            if (now.getTime() - lastCrimeCheck < actualCooldownMs) {
+                const timeLeftSec = Math.ceil((actualCooldownMs - (now.getTime() - lastCrimeCheck)) / 1000);
+                const minutesLeft = Math.floor(timeLeftSec / 60);
+
+                const aiMsg = await generateEconomyResponse("crime-cooldown", `Polisi lagi patroli, sisa cooldown ${minutesLeft} menit.`);
+                return interaction.followUp(aiMsg || `🚫 **COOLDOWN!** Sembunyi dulu **${minutesLeft} menit**.`);
             }
 
-            const success = Math.random() < 0.45; // 45% chance
+            const baseChance = 0.45;
+            const finalChance = baseChance + (mods.crimeSuccess || 0);
+            const success = Math.random() < finalChance;
 
-            const crimes = [
-                { text: "rampok bank", reward: 50000, fine: 20000 },
-                { text: "jual barang ilegal", reward: 25000, fine: 10000 },
-                { text: "hack ATM", reward: 35000, fine: 15000 },
-                { text: "nyolong motor", reward: 15000, fine: 5000 },
-            ];
-
+            // Scenario picks for AI context
+            const crimes = ["rampok bank", "jual barang ilegal", "hack ATM", "nyolong motor", "nyolong jemuran"];
             const scenario = crimes[Math.floor(Math.random() * crimes.length)];
 
             // Update cooldown
@@ -46,16 +51,26 @@ export default {
             });
 
             if (success) {
-                const reward = scenario.reward;
+                const baseReward = Math.floor(Math.random() * (50000 - 15000 + 1)) + 15000;
+                const reward = applyBonus(baseReward, mods.crimePayout || 0);
                 await addWallet(userId, reward);
-                await interaction.followUp(`😈 **SUKSES!** Lu berhasil **${scenario.text}** dan dapet **${formatRupiah(reward)}**!`);
+
+                const aiMsg = await generateEconomyResponse("crime-success", `Crime: ${scenario}, Reward: ${formatRupiah(reward)}.`);
+                let response = aiMsg || `😈 **SUKSES!** Lu dapet **${formatRupiah(reward)}**!`;
+
+                if (mods.crimePayout && mods.crimePayout > 0) {
+                    response += `\n✨ (Bonus Item: +${Math.round(mods.crimePayout * 100)}%)`;
+                }
+
+                await interaction.followUp(response);
             } else {
-                const fine = scenario.fine;
-                // Check if user has enough to pay fine, if not, wallet becomes 0 (or negative? let's stick to 0 min)
+                const fine = 15000;
                 const actualFine = userData.wallet < fine ? userData.wallet : fine;
 
                 await removeWallet(userId, actualFine);
-                await interaction.followUp(`🚔 **GAGAL!** Pas lu mau **${scenario.text}**, polisi dateng. Lu didenda **${formatRupiah(actualFine)}**.`);
+
+                const aiMsg = await generateEconomyResponse("crime-fail", `Crime: ${scenario}, Fine: ${formatRupiah(actualFine)}. Got caught by police.`);
+                await interaction.followUp(aiMsg || `🚔 **GAGAL!** Lu ketangkep dan denda **${formatRupiah(actualFine)}**.`);
             }
 
         } catch (error) {

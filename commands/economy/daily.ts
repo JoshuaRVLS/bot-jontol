@@ -2,8 +2,11 @@ import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../../types/type";
 import { addWallet, getUserData } from "../../utils/Database";
 import db from "../../utils/Database";
+import { formatRupiah } from "../../utils/format";
+import { getPlayerModifiers, applyBonus, applyCooldown } from "../../utils/economyHelper";
+import { generateEconomyResponse } from "../../utils/aiHelper";
 
-const DAILY_AMOUNT = 50000;
+const BASE_DAILY_AMOUNT = 50000;
 
 export default {
     type: "command",
@@ -16,34 +19,63 @@ export default {
 
         const userId = interaction.user.id;
         const user = await getUserData(userId);
-
+        const mods = await getPlayerModifiers(userId);
         const now = new Date();
-        // Check if Last Daily exists and if it was claimed today (simple 24h check or calendar day?)
-        // Using 24h check for now.
+
+        const BASE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+        const actualCooldownMs = applyCooldown(BASE_COOLDOWN_MS, mods.cooldownReduction || 0);
 
         if (user.lastDaily) {
             const lastDaily = new Date(user.lastDaily);
-            const diffTime = Math.abs(now.getTime() - lastDaily.getTime());
-            const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+            const diffTime = now.getTime() - lastDaily.getTime();
 
-            if (diffHours < 24) {
-                const hoursLeft = 24 - diffHours; // Rough estimate
-                await interaction.followUp({
-                    content: `Sabar bang! Lu baru bisa klaim lagi dalam ${hoursLeft} jam-an. Jangan maruk.`,
-                    ephemeral: true
-                });
-                return;
+            if (diffTime < actualCooldownMs) {
+                const timeLeftMs = actualCooldownMs - diffTime;
+                const hoursLeft = Math.floor(timeLeftMs / (1000 * 60 * 60));
+
+                const aiMsg = await generateEconomyResponse("daily-cooldown", `Gak boleh maruk, sisa cooldown ${hoursLeft} jam.`);
+                return interaction.followUp({ content: aiMsg || `Sabar bang! Lu baru bisa klaim lagi dalam ${hoursLeft} jam-an.`, ephemeral: true });
             }
+
+            // Streak check: If last daily was more than 48 hours ago, reset streak
+            const isStreakReset = diffTime > (48 * 60 * 60 * 1000);
+            await db.user.update({
+                where: { id: userId },
+                data: {
+                    dailyStreak: isStreakReset ? 1 : { increment: 1 }
+                }
+            });
+        } else {
+            // First time ever
+            await db.user.update({
+                where: { id: userId },
+                data: { dailyStreak: 1 }
+            });
         }
 
         try {
-            await addWallet(userId, DAILY_AMOUNT);
+            const updatedUser = await getUserData(userId);
+            const streak = updatedUser.dailyStreak || 1;
+            const streakBonus = Math.min(streak * 0.05, 1.0); // max 100% bonus at 20 days
+
+            const baseAmount = applyBonus(BASE_DAILY_AMOUNT, mods.dailyBonus || 0);
+            const amount = Math.floor(baseAmount * (1 + streakBonus));
+
+            await addWallet(userId, amount);
             await db.user.update({
                 where: { id: userId },
                 data: { lastDaily: now }
             });
 
-            await interaction.followUp(`Mantap! Lu dapet **${DAILY_AMOUNT}** coins hari ini. Balik lagi besok ya!`);
+            const aiMsg = await generateEconomyResponse("daily", `Daily claim! Streak: ${streak} days. Reward: ${formatRupiah(amount)}. Bonus from streak: ${Math.round(streakBonus * 100)}%.`);
+            let response = aiMsg || `Mantap! Lu dapet **${formatRupiah(amount)}** hari ini.`;
+
+            response += `\n🔥 **Streak:** ${streak} hari (+${Math.round(streakBonus * 100)}% bonus)`;
+            if (mods.dailyBonus && mods.dailyBonus > 0) {
+                response += `\n✨ (Item Bonus: +${Math.round(mods.dailyBonus * 100)}%)`;
+            }
+
+            await interaction.followUp(response);
         } catch (error) {
             console.error(error);
             await interaction.followUp({ content: "Waduh error pas ngasih duit. Coba lagi nanti.", ephemeral: true });

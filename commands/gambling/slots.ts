@@ -44,15 +44,15 @@ export default {
             const resultString = `| ${row[0]} | ${row[1]} | ${row[2]} | `;
 
             let multiplier = 0;
-            // Winning Logic
+            // Winning Logic (Aimed for ~100% RTP / Fair Play)
             if (row[0] === row[1] && row[1] === row[2]) {
                 // Triple match
-                if (row[0] === "💎") multiplier = 20;
-                else if (row[0] === "7️⃣") multiplier = 10;
+                if (row[0] === "💎") multiplier = 25;
+                else if (row[0] === "7️⃣") multiplier = 15;
                 else multiplier = 5;
             } else if (row[0] === row[1] || row[1] === row[2] || row[0] === row[2]) {
-                // Double match (small win)
-                multiplier = 1.5;
+                // Double match (Win amount is 1.8x)
+                multiplier = 1.8;
             }
 
             const winAmount = Math.floor(amount * multiplier);

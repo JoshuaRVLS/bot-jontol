@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -116,17 +116,22 @@ export const clearWarnings = async (userId: string) => {
 // --- Inventory System ---
 export const getInventory = async (userId: string): Promise<Record<string, number>> => {
   const user = await getUserData(userId);
-  // Ensure inventory is treated as object
   if (!user.inventory || typeof user.inventory !== 'object') {
     return {};
   }
-  return user.inventory as Record<string, number>;
+
+  // Filter out non-item keys like csSkins
+  const inv = { ...(user.inventory as any) };
+  delete inv.csSkins;
+
+  return inv as Record<string, number>;
 };
 
 export const addItem = async (userId: string, itemId: string, amount: number = 1) => {
-  const inv = await getInventory(userId);
-  const currentAmount = inv[itemId] || 0;
-  inv[itemId] = currentAmount + amount;
+  const user = await getUserData(userId);
+  const inv = { ...(user.inventory as any) || {} };
+  const currentAmount = (inv as any)[itemId] || 0;
+  (inv as any)[itemId] = currentAmount + amount;
 
   return prisma.user.update({
     where: { id: userId },
@@ -135,17 +140,111 @@ export const addItem = async (userId: string, itemId: string, amount: number = 1
 };
 
 export const removeItem = async (userId: string, itemId: string, amount: number = 1) => {
-  const inv = await getInventory(userId);
-  if (!inv[itemId] || inv[itemId] < amount) return false;
+  const user = await getUserData(userId);
+  const inv = { ...(user.inventory as any) || {} };
 
-  inv[itemId] -= amount;
-  if (inv[itemId] <= 0) delete inv[itemId];
+  if (!(inv as any)[itemId] || (inv as any)[itemId] < amount) return false;
+
+  (inv as any)[itemId] -= amount;
+  if ((inv as any)[itemId] <= 0) delete (inv as any)[itemId];
 
   await prisma.user.update({
     where: { id: userId },
     data: { inventory: inv }
   });
   return true;
+};
+
+// --- CS:GO Skin System ---
+export const addCSGOSkin = async (userId: string, skin: any) => {
+  const user = await getUserData(userId);
+  const inv = { ...(user.inventory as any) || {} };
+
+  if (!Array.isArray(inv.csSkins)) {
+    inv.csSkins = [];
+  }
+
+  // Add a unique instance ID for each skin so we can sell specific ones
+  const skinInstance = {
+    ...skin,
+    instanceId: `${skin.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    obtainedAt: new Date()
+  };
+
+  inv.csSkins.push(skinInstance);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { inventory: inv }
+  });
+
+  return skinInstance;
+};
+
+export const addCSGOSkins = async (userId: string, skins: any[]) => {
+  const user = await getUserData(userId);
+  const inv = { ...(user.inventory as any) || {} };
+
+  if (!Array.isArray(inv.csSkins)) {
+    inv.csSkins = [];
+  }
+
+  const newInstances = skins.map(skin => ({
+    ...skin,
+    instanceId: `${skin.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    obtainedAt: new Date()
+  }));
+
+  inv.csSkins.push(...newInstances);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { inventory: inv }
+  });
+
+  return newInstances;
+};
+
+export const removeCSGOSkin = async (userId: string, instanceId: string) => {
+  const user = await getUserData(userId);
+  const inv = { ...(user.inventory as any) || {} };
+
+  if (!Array.isArray(inv.csSkins)) return null;
+
+  const skinIndex = inv.csSkins.findIndex((s: any) => s.instanceId === instanceId);
+  if (skinIndex === -1) return null;
+
+  const [removedSkin] = inv.csSkins.splice(skinIndex, 1);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { inventory: inv }
+  });
+
+  return removedSkin;
+};
+
+export const clearCSGOSkins = async (userId: string) => {
+  const user = await getUserData(userId);
+  const inv = { ...(user.inventory as any) || {} };
+
+  if (!Array.isArray(inv.csSkins)) return [];
+
+  const removedSkins = [...inv.csSkins];
+  inv.csSkins = [];
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { inventory: inv }
+  });
+
+  return removedSkins;
+};
+
+export const getCSGOSkins = async (userId: string): Promise<any[]> => {
+  const user = await getUserData(userId);
+  const inv = (user.inventory as any) || {};
+  return Array.isArray(inv.csSkins) ? inv.csSkins : [];
 };
 
 // --- Leveling System ---
@@ -175,4 +274,118 @@ export const addXp = async (userId: string, xpAmount: number) => {
   });
 
   return { leveledUp, newLevel };
+};
+
+// --- Investment System ---
+export const getInvestments = async (userId: string): Promise<Record<string, number>> => {
+  const user = await getUserData(userId);
+  if (!user.investments || typeof user.investments !== 'object') {
+    return {};
+  }
+  return user.investments as Record<string, number>;
+};
+
+export const updateInvestment = async (userId: string, assetId: string, amount: number) => {
+  const investments = await getInvestments(userId);
+  const currentAmount = investments[assetId] || 0;
+  investments[assetId] = currentAmount + amount;
+
+  if (investments[assetId] <= 0) delete investments[assetId];
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { investments: investments }
+  });
+};
+
+export const getMarketAssets = async () => {
+  return prisma.marketAsset.findMany();
+};
+
+export const getMarketAsset = async (assetId: string) => {
+  return prisma.marketAsset.findUnique({
+    where: { id: assetId }
+  });
+};
+
+export const updateMarketAsset = async (assetId: string, data: { price: number, lastPrice: number }) => {
+  return prisma.marketAsset.update({
+    where: { id: assetId },
+    data: {
+      ...data,
+      updatedAt: new Date()
+    }
+  });
+};
+
+export const initMarketAsset = async (assetId: string, name: string, type: string, price: number) => {
+  return prisma.marketAsset.upsert({
+    where: { id: assetId },
+    update: {},
+    create: {
+      id: assetId,
+      name,
+      type,
+      price,
+      lastPrice: price
+    }
+  });
+};
+
+// --- Bounty System ---
+export const setBounty = async (targetId: string, rewardValue: number, placedBy: string) => {
+  return (prisma as any).bounty.upsert({
+    where: { targetId },
+    update: {
+      reward: { increment: rewardValue },
+      placedBy: placedBy
+    },
+    create: {
+      targetId,
+      reward: rewardValue,
+      placedBy
+    }
+  });
+};
+
+export const getBounty = async (targetId: string) => {
+  return (prisma as any).bounty.findUnique({
+    where: { targetId }
+  });
+};
+
+export const claimBounty = async (targetId: string) => {
+  const bounty = await getBounty(targetId);
+  if (!bounty) return null;
+
+  await (prisma as any).bounty.delete({
+    where: { targetId }
+  });
+
+  return bounty;
+};
+
+// --- Daily Streak ---
+export const updateStreak = async (userId: string, reset: boolean = false) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      dailyStreak: reset ? 1 : { increment: 1 }
+    }
+  });
+};
+
+// --- Guild Configuration ---
+export const getGuildConfig = async (guildId: string) => {
+  return (prisma as any).guildConfig.findUnique({
+    where: { guildId }
+  });
+};
+
+export const setGuildConfig = async (guildId: string, data: any) => {
+  return (prisma as any).guildConfig.upsert({
+    where: { guildId },
+    update: { ...data, updatedAt: new Date() },
+    create: { guildId, ...data }
+  });
 };

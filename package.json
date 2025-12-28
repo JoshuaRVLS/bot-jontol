@@ -3,24 +3,48 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx --watch index.ts"
+    "dev": "tsx --watch index.ts",
+    "start": "tsx index.ts",
+    "build": "prisma generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
+    "@discordjs/voice": "^0.19.0",
+    "@distube/soundcloud": "^2.0.4",
+    "@distube/spotify": "^2.0.2",
+    "@distube/youtube": "^1.0.4",
+    "@distube/yt-dlp": "^2.0.1",
+    "@distube/ytdl-core": "^4.16.12",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@napi-rs/canvas": "^0.1.80",
+    "@openrouter/sdk": "^0.3.10",
     "@prisma/extension-accelerate": "^2.0.2",
+    "@snazzah/davey": "^0.1.9",
+    "@types/express": "^5.0.6",
     "cli-table": "^0.3.11",
     "discord.js": "^14.22.1",
+    "distube": "^5.2.3",
     "dotenv": "^17.2.2",
+    "express": "^5.2.1",
+    "libsodium-wrappers": "^0.7.15",
+    "opusscript": "^0.1.1",
+    "play-dl": "^1.9.7",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.5"
+    "tsx": "^4.20.5",
+    "youtubei.js": "^16.0.1"
   },
   "devDependencies": {
     "@prisma/client": "^6.16.2",
+    "@types/ms": "^2.1.0",
     "prisma": "^6.16.2"
   },
-  "description": ""
+  "description": "",
+  "pnpm": {
+    "overrides": {
+      "youtubei.js": "$youtubei.js"
+    }
+  }
 }
