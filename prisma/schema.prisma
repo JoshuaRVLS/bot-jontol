@@ -10,7 +10,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = "mongodb+srv://JoshuaRVL:09071982@jbot.zmry4kd.mongodb.net/jbot?appName=jbot"
+  url      = env("DATABASE_URL")
 }
 
 model User {
