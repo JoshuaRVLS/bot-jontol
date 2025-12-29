@@ -13,7 +13,7 @@ import express from "express";
 
 const client = new ExtendedClient();
 const app = express();
-const port = 4000; // Secret internal port
+const port = parseInt(process.env.BOT_API_PORT || "8000", 10);
 
 app.use(express.json());
 

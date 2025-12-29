@@ -1,10 +1,12 @@
+const BOT_API_URL = process.env.BOT_API_URL || "http://localhost:8000";
+
 export const getBotStats = async () => {
     try {
-        const response = await fetch("http://localhost:4000/api/stats", {
+        const response = await fetch(`${BOT_API_URL}/api/stats`, {
             headers: {
-                "x-api-key": process.env.OPENROUTER_KEY || "09071982" // Temporary fallback for internal dev
+                "x-api-key": process.env.OPENROUTER_KEY || "09071982"
             },
-            next: { revalidate: 30 } // Cache for 30 seconds
+            next: { revalidate: 30 }
         });
 
         if (!response.ok) {
@@ -20,11 +22,11 @@ export const getBotStats = async () => {
 
 export const getGuildLiveData = async (guildId: string) => {
     try {
-        const response = await fetch(`http://localhost:4000/api/guild/${guildId}`, {
+        const response = await fetch(`${BOT_API_URL}/api/guild/${guildId}`, {
             headers: {
                 "x-api-key": process.env.OPENROUTER_KEY || "09071982"
             },
-            next: { revalidate: 10 } // Cache for 10 seconds
+            next: { revalidate: 10 }
         });
 
         if (!response.ok) {
