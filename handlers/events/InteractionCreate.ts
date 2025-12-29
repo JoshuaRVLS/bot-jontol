@@ -64,11 +64,15 @@ export default {
     } catch (error) {
       console.error(`Error executing interaction:`, error);
       if (interaction.isRepliable()) {
-        const content = "There was an error while executing this command!";
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
-        } else {
-          await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+        try {
+          const content = "There was an error while executing this command!";
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
+          } else {
+            await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+          }
+        } catch (replyError) {
+          console.error("Failed to send error message (interaction may have expired):", replyError);
         }
       }
     }

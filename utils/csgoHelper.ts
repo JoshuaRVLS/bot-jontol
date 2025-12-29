@@ -63,11 +63,11 @@ export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
     sultan: {
         name: "Kasta Sultan",
         cost: 100000000,
-        description: "High risk high reward. 10% chance JACKPOT, 90% chance rugi.",
+        description: "BRUTAL GAMBLING. 92% chance rugi gede, 8% chance jackpot.",
         weights: {
-            "covert": 9000, // 90% - mostly loss
-            "extraordinary": 500, // 5% - jackpot
-            "rare special": 500, // 5% - jackpot
+            "covert": 9200, // 92% - MOSTLY TRASH
+            "extraordinary": 400, // 4% - jackpot
+            "rare special": 400, // 4% - jackpot
         }
     }
 };
@@ -134,9 +134,9 @@ export const getSkinPrice = (rarityName: string, float: number): number => {
     else if (r.includes("mil-spec")) basePrice = 20000 + Math.random() * 80000;
     else if (r.includes("restricted")) basePrice = 100000 + Math.random() * 400000;
     else if (r.includes("classified")) basePrice = 2000000 + Math.random() * 8000000; // 2M - 10M
-    else if (r.includes("covert")) basePrice = 15000000 + Math.random() * 70000000; // 15M - 85M (avg 50M, mostly loss on Sultan)
+    else if (r.includes("covert")) basePrice = 10000000 + Math.random() * 50000000; // 10M - 60M (avg 35M = RUGI 65M per Sultan case!)
     else if (r.includes("contraband") || r.includes("extraordinary") || r.includes("gold") || r.includes("rare special")) {
-        basePrice = 300000000 + Math.random() * 700000000; // 300M - 1B JACKPOT!
+        basePrice = 500000000 + Math.random() * 1500000000; // 500M - 2B MEGA JACKPOT!
     } else {
         basePrice = 500 + Math.random() * 4500;
     }

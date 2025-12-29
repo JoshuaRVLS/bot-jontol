@@ -79,9 +79,7 @@ export default {
                 )
         ),
     execute: async (interaction: ChatInputCommandInteraction) => {
-        const userId = interaction.user.id;
         const subcommand = interaction.options.getSubcommand();
-        const user = await getUserData(userId);
 
         if (subcommand === "list") {
             const embed = new EmbedBuilder()
@@ -101,18 +99,21 @@ export default {
             return interaction.reply({ embeds: [embed] });
         }
 
+        await interaction.deferReply();
+
+        const userId = interaction.user.id;
+        const user = await getUserData(userId);
         const caseId = interaction.options.getString("case", true) as CaseType;
         const config = CASE_CONFIGS[caseId];
         let executionCount = 1;
 
         if (subcommand === "allin") {
             executionCount = Math.floor(user.wallet / config.cost);
-            executionCount = Math.min(executionCount, 50); // Hard limit safety
+            executionCount = Math.min(executionCount, 50);
 
             if (executionCount <= 0) {
-                return interaction.reply({
-                    content: `Saldo lu gak cukup buat beli **${config.name}**.`,
-                    ephemeral: true
+                return interaction.editReply({
+                    content: `Saldo lu gak cukup buat beli **${config.name}**.`
                 });
             }
         } else if (subcommand === "buy") {
@@ -121,13 +122,10 @@ export default {
 
         const totalCost = executionCount * config.cost;
         if (user.wallet < totalCost) {
-            return interaction.reply({
-                content: `Saldo lu gak cukup. Gacha **${executionCount}x ${config.name}** butuh **${formatRupiah(totalCost)}**.`,
-                ephemeral: true
+            return interaction.editReply({
+                content: `Saldo lu gak cukup. Gacha **${executionCount}x ${config.name}** butuh **${formatRupiah(totalCost)}**.`
             });
         }
-
-        await interaction.deferReply();
 
         try {
             if (!skinsCache) {
