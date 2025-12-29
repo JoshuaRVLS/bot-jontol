@@ -8,15 +8,15 @@ const generateShopEmbed = (items: GameItem[], page: number, totalPages: number, 
     const pageItems = items.slice(start, start + ITEMS_PER_PAGE);
 
     const embed = new EmbedBuilder()
-        .setTitle(`Warung Kelontong Jontol`)
-        .setDescription(`**Kategori:** ${category.charAt(0).toUpperCase() + category.slice(1)}\nGunakan tombol **Beli** lalu masukkan ID item.`)
+        .setTitle(`Pasar Jontol`)
+        .setDescription(`**Kategori:** ${category.charAt(0).toUpperCase() + category.slice(1)}\nGunakan ID item untuk melakukan pembelian.`)
         .setColor(0x00A2FF)
-        .setFooter({ text: `Halaman ${page + 1} dari ${totalPages} • Total ${items.length} item` });
+        .setFooter({ text: `Halaman ${page + 1} dari ${totalPages}` });
 
     pageItems.forEach((item, index) => {
         embed.addFields({
             name: `${start + index + 1}. ${item.name}`,
-            value: `💰 ${formatRupiah(item.price)}\n*${item.description}*\n✨ **Skill:** ${item.skill || "Gak ada"}\n\`ID: ${item.id}\``,
+            value: `Harga: ${formatRupiah(item.price)}\n${item.description}\nID: \`${item.id}\``,
             inline: true
         });
     });

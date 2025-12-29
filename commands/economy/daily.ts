@@ -34,7 +34,7 @@ export default {
                 const hoursLeft = Math.floor(timeLeftMs / (1000 * 60 * 60));
 
                 const aiMsg = await generateEconomyResponse("daily-cooldown", `Gak boleh maruk, sisa cooldown ${hoursLeft} jam.`);
-                return interaction.followUp({ content: aiMsg || `Sabar bang! Lu baru bisa klaim lagi dalam ${hoursLeft} jam-an.`, ephemeral: true });
+                return interaction.followUp({ content: aiMsg || `Sabar bang. Bisa klaim lagi dalam ${hoursLeft} jam.`, ephemeral: true });
             }
 
             // Streak check: If last daily was more than 48 hours ago, reset streak
@@ -68,12 +68,9 @@ export default {
             });
 
             const aiMsg = await generateEconomyResponse("daily", `Daily claim! Streak: ${streak} days. Reward: ${formatRupiah(amount)}. Bonus from streak: ${Math.round(streakBonus * 100)}%.`);
-            let response = aiMsg || `Mantap! Lu dapet **${formatRupiah(amount)}** hari ini.`;
+            let response = aiMsg || `Berhasil klaim **${formatRupiah(amount)}** hari ini.`;
 
-            response += `\n🔥 **Streak:** ${streak} hari (+${Math.round(streakBonus * 100)}% bonus)`;
-            if (mods.dailyBonus && mods.dailyBonus > 0) {
-                response += `\n✨ (Item Bonus: +${Math.round(mods.dailyBonus * 100)}%)`;
-            }
+            response += `\nStreak: ${streak} hari (+${Math.round(streakBonus * 100)}% bonus)`;
 
             await interaction.followUp(response);
         } catch (error) {

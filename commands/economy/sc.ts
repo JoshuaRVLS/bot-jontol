@@ -1,37 +1,81 @@
-import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
 import { Command } from "../../types/type";
-import { getUserData, addCSGOSkins, removeWallet, addCSGOSkin } from "../../utils/Database";
+import { getSkinPrice, getWeightedSkin, getSkinFloat, CASE_CONFIGS, CaseType } from "../../utils/csgoHelper";
+import { getUserData, addCSGOSkins, removeWallet, addCSGOSkin, incrementPity, resetPity, updatePity } from "../../utils/Database";
 import { formatRupiah } from "../../utils/format";
-import { getSkinPrice, getWeightedSkin, getSkinFloat } from "../../utils/csgoHelper";
 
-const GACHA_COST = 100000;
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json";
 
 // Cache for skins to avoid fetching every time
 let skinsCache: any[] | null = null;
 
+const announceRareDrop = async (interaction: ChatInputCommandInteraction, skin: any, caseName: string) => {
+    const rarity = skin.rarity?.name?.toLowerCase() || "";
+    if (rarity.includes("covert") || rarity.includes("gold") || rarity.includes("extraordinary") || rarity.includes("rare special")) {
+        const channel = interaction.channel as TextChannel;
+        if (!channel) return;
+
+        const announcement = new EmbedBuilder()
+            .setTitle("GLOBAL DROP ALERT")
+            .setDescription(`**${interaction.user.username}** mendapatkan drop **${skin.rarity?.name}** dari **${caseName}**`)
+            .addFields(
+                { name: "Weapon", value: `${skin.weapon?.name} | ${skin.pattern?.name}`, inline: true },
+                { name: "Wear", value: `${skin.wear} (${skin.float})`, inline: true },
+                { name: "Est. Price", value: formatRupiah(skin.marketPrice), inline: true }
+            )
+            .setColor(skin.rarity?.color || 0xFFD700)
+            .setThumbnail(skin.image)
+            .setTimestamp();
+
+        await channel.send({ embeds: [announcement] });
+    }
+};
+
 export default {
     type: "command",
     data: new SlashCommandBuilder()
         .setName("sc")
-        .setDescription("Gacha skin CS:GO mewah (Biaya: 100k)")
+        .setDescription("Gacha skin CS:GO mewah")
         .addSubcommand(sub =>
-            sub.setName("all")
-                .setDescription("Gacha pake SEMUA duit yang ada di wallet lu (ALL-IN!)")
+            sub.setName("list")
+                .setDescription("Lihat daftar case yang tersedia")
+        )
+        .addSubcommand(sub =>
+            sub.setName("buy")
+                .setDescription("Beli case pilihanmu")
+                .addStringOption(opt =>
+                    opt.setName("case")
+                        .setDescription("Pilih jenis case")
+                        .setRequired(true)
+                        .addChoices(
+                            { name: "Kasta Najis (15k)", value: "budget" },
+                            { name: "Kasta Rendah (100k)", value: "classic" },
+                            { name: "Kasta Menengah Kebawah (1M)", value: "highroller" },
+                            { name: "Kasta Tinggi (10M)", value: "elite" },
+                            { name: "Kasta Sultan (100M)", value: "sultan" }
+                        )
+                )
+                .addIntegerOption(opt =>
+                    opt.setName("jumlah")
+                        .setDescription("Jumlah gacha (Max 50)")
+                        .setMinValue(1)
+                        .setMaxValue(50)
+                )
         )
         .addSubcommand(sub =>
             sub.setName("allin")
-                .setDescription("Habisin seluruh uang di wallet buat gacha!")
-        )
-        .addSubcommand(sub =>
-            sub.setName("amount")
-                .setDescription("Gacha berapa kali bang")
-                .addIntegerOption(opt =>
-                    opt.setName("jumlah")
-                        .setDescription("Jumlah gacha (Max 100)")
-                        .setMinValue(1)
-                        .setMaxValue(100)
+                .setDescription("Habisin seluruh uang di wallet buat gacha case pilihan!")
+                .addStringOption(opt =>
+                    opt.setName("case")
+                        .setDescription("Pilih jenis case")
                         .setRequired(true)
+                        .addChoices(
+                            { name: "Kasta Najis (15k)", value: "budget" },
+                            { name: "Kasta Rendah (100k)", value: "classic" },
+                            { name: "Kasta Menengah Kebawah (1M)", value: "highroller" },
+                            { name: "Kasta Tinggi (10M)", value: "elite" },
+                            { name: "Kasta Sultan (100M)", value: "sultan" }
+                        )
                 )
         ),
     execute: async (interaction: ChatInputCommandInteraction) => {
@@ -39,113 +83,139 @@ export default {
         const subcommand = interaction.options.getSubcommand();
         const user = await getUserData(userId);
 
-        if (subcommand === "once") {
-            if (user.wallet < GACHA_COST) {
+        if (subcommand === "list") {
+            const embed = new EmbedBuilder()
+                .setTitle("Daftar Case CS:GO")
+                .setDescription("Pilih case sesuai saldo wallet lu.")
+                .setColor(0x00A2FF)
+                .setTimestamp();
+
+            Object.entries(CASE_CONFIGS).forEach(([key, config]) => {
+                embed.addFields({
+                    name: `${config.name} - ${formatRupiah(config.cost)}`,
+                    value: config.description,
+                    inline: false
+                });
+            });
+
+            return interaction.reply({ embeds: [embed] });
+        }
+
+        const caseId = interaction.options.getString("case", true) as CaseType;
+        const config = CASE_CONFIGS[caseId];
+        let executionCount = 1;
+
+        if (subcommand === "allin") {
+            executionCount = Math.floor(user.wallet / config.cost);
+            executionCount = Math.min(executionCount, 50); // Hard limit safety
+
+            if (executionCount <= 0) {
                 return interaction.reply({
-                    content: `Duit lu gak cukup bang! Gacha ini butuh **${formatRupiah(GACHA_COST)}** di wallet.`,
+                    content: `Saldo lu gak cukup buat beli **${config.name}**.`,
                     ephemeral: true
                 });
             }
+        } else if (subcommand === "buy") {
+            executionCount = interaction.options.getInteger("jumlah") || 1;
+        }
 
-            await interaction.deferReply();
+        const totalCost = executionCount * config.cost;
+        if (user.wallet < totalCost) {
+            return interaction.reply({
+                content: `Saldo lu gak cukup. Gacha **${executionCount}x ${config.name}** butuh **${formatRupiah(totalCost)}**.`,
+                ephemeral: true
+            });
+        }
 
-            try {
-                if (!skinsCache) {
-                    const response = await fetch(API_URL);
-                    skinsCache = await response.json();
+        await interaction.deferReply();
+
+        try {
+            if (!skinsCache) {
+                const response = await fetch(API_URL);
+                skinsCache = await response.json();
+            }
+
+            await removeWallet(userId, totalCost);
+
+            const skinsToDraw = [];
+            const summary: Record<string, { count: number; rarityColor: number }> = {};
+            let bestSkin: any = null;
+
+            let currentPity = user.scPity || 0;
+            let pityReset = false;
+
+            for (let i = 0; i < executionCount; i++) {
+                const rawSkin = getWeightedSkin(skinsCache!, caseId, currentPity);
+                const rarity = rawSkin.rarity?.name?.toLowerCase() || "";
+
+                // Check if rare to reset pity
+                if (rarity.includes("covert") || rarity.includes("extraordinary") || rarity.includes("gold") || rarity.includes("rare special")) {
+                    pityReset = true;
+                    currentPity = 0;
+                } else {
+                    currentPity++;
                 }
 
-                await removeWallet(userId, GACHA_COST);
-                const skin = getWeightedSkin(skinsCache!);
                 const { float, wear } = getSkinFloat();
-                const marketPrice = getSkinPrice(skin.rarity?.name || "Consumer Grade", float);
+                const marketPrice = getSkinPrice(rawSkin.rarity?.name || "Consumer Grade", float);
+                const fullName = `${rawSkin.weapon?.name} | ${rawSkin.pattern?.name}`;
 
-                await addCSGOSkin(userId, { ...skin, marketPrice, float, wear });
+                const skinData = {
+                    ...rawSkin,
+                    name: fullName,
+                    marketPrice,
+                    float,
+                    wear
+                };
+
+                skinsToDraw.push(skinData);
+
+                if (!summary[fullName]) {
+                    summary[fullName] = { count: 0, rarityColor: rawSkin.rarity?.color || 0x00A2FF };
+                }
+                summary[fullName].count++;
+
+                if (!bestSkin || marketPrice > bestSkin.marketPrice) {
+                    bestSkin = skinData;
+                }
+
+                // Announce single rare drops if it's a small gacha or just the best one
+                if (executionCount === 1) {
+                    await announceRareDrop(interaction, skinData, config.name);
+                }
+            }
+
+            if (executionCount > 1 && bestSkin) {
+                await announceRareDrop(interaction, bestSkin, config.name);
+            }
+
+            // Update user's final pity state in DB
+            await updatePity(userId, currentPity);
+
+            if (executionCount === 1) {
+                const skin = skinsToDraw[0];
+                await addCSGOSkin(userId, skin);
 
                 const embed = new EmbedBuilder()
-                    .setTitle(`🎰 Gacha Berhasil!`)
-                    .setDescription(`Sikat bang! Lu baru aja dapet skin cakep.`)
+                    .setTitle(`Gacha Berhasil`)
+                    .setDescription(`Lu mendapatkan skin dari **${config.name}**.`)
                     .setColor(skin.rarity?.color || 0x00A2FF)
-                    .setThumbnail(skin.crates?.[0]?.image || null)
                     .setImage(skin.image)
                     .addFields(
-                        { name: "🔫 Weapon", value: skin.weapon?.name || "Unknown", inline: true },
-                        { name: "✨ Pattern", value: skin.pattern?.name || "Unknown", inline: true },
-                        { name: "🛡️ Rarity", value: skin.rarity?.name || "Unknown", inline: true },
-                        { name: "💎 Wear", value: `${wear} (${float})`, inline: true },
-                        { name: "🏷️ Est. Price", value: formatRupiah(marketPrice), inline: true },
-                        { name: "💰 Biaya Gacha", value: formatRupiah(GACHA_COST), inline: true }
+                        { name: "Weapon", value: skin.weapon?.name || "Unknown", inline: true },
+                        { name: "Pattern", value: skin.pattern?.name || "Unknown", inline: true },
+                        { name: "Rarity", value: skin.rarity?.name || "Unknown", inline: true },
+                        { name: "Wear", value: `${skin.wear} (${skin.float})`, inline: true },
+                        { name: "Est. Price", value: formatRupiah(skin.marketPrice), inline: true },
+                        { name: "Biaya", value: formatRupiah(config.cost), inline: true }
                     )
-                    .setFooter({ text: `ID Skin: ${skin.id}` })
                     .setTimestamp();
 
                 return interaction.editReply({
-                    content: `### 🎊 CONGRATS ${interaction.user}!`,
-                    embeds: [embed]
+                    content: `### Gacha Berhasil ${interaction.user}`,
+                    embeds: [embed.setFooter({ text: `Pity Count: ${pityReset ? 0 : currentPity}` })]
                 });
-            } catch (error) {
-                console.error(error);
-                return interaction.editReply("Gagal gacha bang.");
-            }
-        }
-
-        if (subcommand === "all" || subcommand === "allin" || subcommand === "amount") {
-            let executionCount = 0;
-            if (subcommand === "all" || subcommand === "allin") {
-                const count = Math.floor(user.wallet / GACHA_COST);
-                if (count <= 0) {
-                    return interaction.reply({
-                        content: `Duit lu gak cukup buat gacha sekali-kali pun bang!`,
-                        ephemeral: true
-                    });
-                }
-                executionCount = Math.min(count, 100);
             } else {
-                executionCount = interaction.options.getInteger("jumlah", true);
-            }
-
-            const totalCost = executionCount * GACHA_COST;
-
-            if (user.wallet < totalCost) {
-                return interaction.reply({
-                    content: `Duit lu gak cukup buat gacha **${executionCount}x** bang! Butuh **${formatRupiah(totalCost)}**.`,
-                    ephemeral: true
-                });
-            }
-
-            await interaction.deferReply();
-
-            try {
-                if (!skinsCache) {
-                    const response = await fetch(API_URL);
-                    skinsCache = await response.json();
-                }
-
-                await removeWallet(userId, totalCost);
-
-                const skinsToDraw = [];
-                const summary: Record<string, { count: number; rarityColor: number }> = {};
-                let bestSkin = null;
-
-                for (let i = 0; i < executionCount; i++) {
-                    const skin = getWeightedSkin(skinsCache!);
-                    const { float, wear } = getSkinFloat();
-                    const marketPrice = getSkinPrice(skin.rarity?.name || "Consumer Grade", float);
-                    const skinData = { ...skin, marketPrice, float, wear };
-
-                    skinsToDraw.push(skinData);
-
-                    const fullName = `${skin.weapon?.name} | ${skin.pattern?.name}`;
-                    if (!summary[fullName]) {
-                        summary[fullName] = { count: 0, rarityColor: skin.rarity?.color || 0x00A2FF };
-                    }
-                    summary[fullName].count++;
-
-                    if (!bestSkin || marketPrice > bestSkin.marketPrice) {
-                        bestSkin = skinData;
-                    }
-                }
-
                 await addCSGOSkins(userId, skinsToDraw);
 
                 const summaryDesc = Object.entries(summary)
@@ -154,32 +224,27 @@ export default {
 
                 const totalEstValue = skinsToDraw.reduce((acc, s) => acc + (s.marketPrice || 0), 0);
 
-                const title = (subcommand === "all" || subcommand === "allin") ? `🎰 ALL-IN GACHA! (${executionCount}x)` : `🎰 MASS GACHA! (${executionCount}x)`;
-                const desc = (subcommand === "all" || subcommand === "allin")
-                    ? `Gila bang! Lu baru aja nge-gacha massal pake total **${formatRupiah(totalCost)}**!`
-                    : `Sikat bang! Lu nge-gacha **${executionCount}x** pake total **${formatRupiah(totalCost)}**!`;
-
                 const allEmbed = new EmbedBuilder()
-                    .setTitle(title)
-                    .setDescription(desc)
+                    .setTitle(`Mass Gacha: ${executionCount}x ${config.name}`)
+                    .setDescription(`Lu melakukan gacha massal dengan total biaya **${formatRupiah(totalCost)}**.`)
                     .addFields(
-                        { name: "📊 Hasil Gacha", value: summaryDesc.length > 1024 ? summaryDesc.substring(0, 1021) + "..." : summaryDesc, inline: false },
-                        { name: "🏷️ Total Est. Value", value: formatRupiah(totalEstValue), inline: true },
-                        { name: "💰 Sisa Wallet", value: formatRupiah(user.wallet - totalCost), inline: true }
+                        { name: "Hasil Gacha", value: summaryDesc.length > 1024 ? summaryDesc.substring(0, 1021) + "..." : summaryDesc, inline: false },
+                        { name: "Total Est. Value", value: formatRupiah(totalEstValue), inline: true },
+                        { name: "Sisa Wallet", value: formatRupiah(user.wallet - totalCost), inline: true }
                     )
                     .setColor(bestSkin?.rarity?.color || 0xFF0000)
                     .setImage(bestSkin?.image || null)
-                    .setFooter({ text: `Total Skin unik: ${Object.keys(summary).length} | Best drop: ${bestSkin?.weapon?.name} | ${bestSkin?.pattern?.name}` })
+                    .setFooter({ text: `Best drop: ${bestSkin?.weapon?.name} | ${bestSkin?.pattern?.name}${pityReset ? "" : ` • Pity: ${currentPity}`}` })
                     .setTimestamp();
 
                 return interaction.editReply({
-                    content: `### 🚀 GACHA BERHASIL ${interaction.user}!`,
+                    content: `### Gacha Berhasil ${interaction.user}`,
                     embeds: [allEmbed]
                 });
-            } catch (error) {
-                console.error(error);
-                return interaction.editReply("Gagal gacha massal bang.");
             }
+        } catch (error) {
+            console.error(error);
+            return interaction.editReply("Gagal gacha bang.");
         }
     },
-} as Command;
+} as any;

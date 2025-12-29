@@ -16,7 +16,7 @@ const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
 export const generateEconomyResponse = async (
     command: string,
     context: string,
-    tone: string = "indonesian slang, funny, slightly realistic, avoid generic words, make it sound like a real person or a bot with personality"
+    tone: string = "indonesian slang, casual, direct, avoid being overly hyperbolic or 'cringe', sound like a standard person in Jakarta"
 ): Promise<string> => {
     try {
         const prompt = `

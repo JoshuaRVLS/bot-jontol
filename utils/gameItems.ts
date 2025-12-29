@@ -20,7 +20,7 @@ export interface GameItem {
 
 export const ITEMS: GameItem[] = [
     // === DEFENSE ===
-    { id: "shield", name: "Preman Kampung", price: 5000, description: "Melindungi dompet dari maling (1x pakai).", type: "defense", skill: "Auto-block robbery", modifiers: { robProtection: 1.0 } },
+    { id: "shield", name: "Preman Kampung", price: 5000, description: "Melindungi dompet dari pencurian (1x pakai).", type: "defense", skill: "Auto-block robbery", modifiers: { robProtection: 1.0 } },
     { id: "bodyguard", name: "Bodyguard Elite", price: 50000, description: "Perlindungan maksimal dari serangan.", type: "defense", skill: "+20% Rob Protection", modifiers: { robProtection: 0.2 } },
     { id: "bunker", name: "Bunker Rahasia", price: 500000, description: "Tempat aman untuk simpan harta.", type: "defense", skill: "+50% Rob Protection", modifiers: { robProtection: 0.5 } },
     { id: "alarm", name: "Alarm Anti-Maling", price: 15000, description: "Notifikasi instan jika ada yang rob.", type: "defense", skill: "+5% Rob Protection", modifiers: { robProtection: 0.05 } },
@@ -46,12 +46,12 @@ export const ITEMS: GameItem[] = [
 
     // === VEHICLES ===
     { id: "bicycle", name: "Sepeda Onthel", price: 50000, description: "Kendaraan ramah lingkungan.", type: "vehicle", skill: "-2% Cooldown", modifiers: { cooldownReduction: 0.02 } },
-    { id: "motorcycle", name: "Motor Sport", price: 500000, description: "Kecepatan tinggi, style mantap.", type: "vehicle", skill: "-10% Cooldown", modifiers: { cooldownReduction: 0.1 } },
-    { id: "car", name: "Sedan Mewah", price: 2000000, description: "Mobil keluarga berkelas.", type: "vehicle", skill: "-15% Cooldown", modifiers: { cooldownReduction: 0.15 } },
+    { id: "motorcycle", name: "Motor Sport", price: 500000, description: "Motor dengan performa tinggi.", type: "vehicle", skill: "-10% Cooldown", modifiers: { cooldownReduction: 0.1 } },
+    { id: "car", name: "Sedan Mewah", price: 2000000, description: "Mobil sedan yang nyaman.", type: "vehicle", skill: "-15% Cooldown", modifiers: { cooldownReduction: 0.15 } },
     { id: "supercar", name: "Supercar Lambo", price: 15000000, description: "Impian setiap orang.", type: "vehicle", skill: "-20% Cooldown", modifiers: { cooldownReduction: 0.2 } },
     { id: "helicopter", name: "Helikopter Pribadi", price: 50000000, description: "Terbang bebas tanpa macet.", type: "vehicle", skill: "-30% Cooldown", modifiers: { cooldownReduction: 0.3 } },
     { id: "yacht", name: "Yacht Mewah", price: 100000000, description: "Berlayar dengan gaya.", type: "vehicle", skill: "-35% Cooldown", modifiers: { cooldownReduction: 0.35 } },
-    { id: "jet", name: "Private Jet", price: 250000000, description: "Sultan mode: ON.", type: "vehicle", skill: "-50% Cooldown", modifiers: { cooldownReduction: 0.5 } },
+    { id: "jet", name: "Private Jet", price: 250000000, description: "Pesawat jet pribadi kelas eksekutif.", type: "vehicle", skill: "-50% Cooldown", modifiers: { cooldownReduction: 0.5 } },
     { id: "submarine", name: "Kapal Selam Mini", price: 75000000, description: "Eksplorasi bawah laut.", type: "vehicle", skill: "-25% Cooldown", modifiers: { cooldownReduction: 0.25 } },
     { id: "tank", name: "Tank Militer", price: 500000000, description: "Dominasi total.", type: "weapon", skill: "+40% Rob Success, +40% Crime Success", modifiers: { robSuccess: 0.4, crimeSuccess: 0.4 } },
 
@@ -81,7 +81,7 @@ export const ITEMS: GameItem[] = [
     { id: "watch", name: "Rolex Submariner", price: 100000000, description: "Jam tangan mewah.", type: "collectible", skill: "+50% Daily Bonus", modifiers: { dailyBonus: 0.5 } },
     { id: "necklace", name: "Kalung Emas 24K", price: 50000000, description: "Perhiasan berkelas.", type: "collectible", skill: "+25% Daily Bonus", modifiers: { dailyBonus: 0.25 } },
     { id: "ring", name: "Cincin Berlian", price: 75000000, description: "Simbol kemewahan.", type: "collectible", skill: "+35% Daily Bonus", modifiers: { dailyBonus: 0.35 } },
-    { id: "crown", name: "Mahkota Raja", price: 500000000, description: "Hanya untuk yang terpilih.", type: "collectible", skill: "+100% All Bonus", modifiers: { workBonus: 1.0, dailyBonus: 1.0, crimePayout: 1.0 } },
+    { id: "crown", name: "Mahkota Raja", price: 500000000, description: "Simbol kekuasaan tertinggi.", type: "collectible", skill: "+100% All Bonus", modifiers: { workBonus: 1.0, dailyBonus: 1.0, crimePayout: 1.0 } },
     { id: "painting", name: "Lukisan Monalisa", price: 999999999, description: "Karya seni tak ternilai.", type: "collectible", skill: "+200% Daily Bonus", modifiers: { dailyBonus: 2.0 } },
     { id: "trophy", name: "Piala Juara 1", price: 1000000, description: "Bukti kemenangan.", type: "collectible", skill: "+10% Work Bonus", modifiers: { workBonus: 0.1 } },
     { id: "medal", name: "Medali Emas", price: 500000, description: "Penghargaan tertinggi.", type: "collectible", skill: "+5% Work Bonus", modifiers: { workBonus: 0.05 } },

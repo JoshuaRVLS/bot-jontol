@@ -35,7 +35,7 @@ export default {
                 const aiMsg = await generateEconomyResponse("work-cooldown", `Player needs to wait ${minutesLeft} minutes more.`);
 
                 await interaction.followUp({
-                    content: aiMsg || `Lu capek bang, istirahat dulu! Bisa kerja lagi dalam **${minutesLeft} menit**.`,
+                    content: aiMsg || `Lu capek, istirahat dulu. Bisa kerja lagi dalam **${minutesLeft} menit**.`,
                 });
                 return;
             }
@@ -57,10 +57,6 @@ export default {
             let finalMsg = aiResponse || `Lu dapet gaji **${formatRupiah(salary)}**!`;
 
             // Add technical breakdown if mods exist
-            if (mods.workBonus && mods.workBonus > 0) {
-                finalMsg += `\n✨ (Bonus Item: +${Math.round(mods.workBonus * 100)}%)`;
-            }
-
             await interaction.followUp(finalMsg);
         } catch (error) {
             console.error(error);

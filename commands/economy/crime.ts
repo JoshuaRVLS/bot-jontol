@@ -33,7 +33,7 @@ export default {
                 const minutesLeft = Math.floor(timeLeftSec / 60);
 
                 const aiMsg = await generateEconomyResponse("crime-cooldown", `Polisi lagi patroli, sisa cooldown ${minutesLeft} menit.`);
-                return interaction.followUp(aiMsg || `🚫 **COOLDOWN!** Sembunyi dulu **${minutesLeft} menit**.`);
+                return interaction.followUp(aiMsg || `Sembunyi dulu. Bisa crime lagi dalam **${minutesLeft} menit**.`);
             }
 
             const baseChance = 0.45;
@@ -56,11 +56,7 @@ export default {
                 await addWallet(userId, reward);
 
                 const aiMsg = await generateEconomyResponse("crime-success", `Crime: ${scenario}, Reward: ${formatRupiah(reward)}.`);
-                let response = aiMsg || `😈 **SUKSES!** Lu dapet **${formatRupiah(reward)}**!`;
-
-                if (mods.crimePayout && mods.crimePayout > 0) {
-                    response += `\n✨ (Bonus Item: +${Math.round(mods.crimePayout * 100)}%)`;
-                }
+                let response = aiMsg || `Sukses! Lu dapet **${formatRupiah(reward)}**.`;
 
                 await interaction.followUp(response);
             } else {
@@ -70,7 +66,7 @@ export default {
                 await removeWallet(userId, actualFine);
 
                 const aiMsg = await generateEconomyResponse("crime-fail", `Crime: ${scenario}, Fine: ${formatRupiah(actualFine)}. Got caught by police.`);
-                await interaction.followUp(aiMsg || `🚔 **GAGAL!** Lu ketangkep dan denda **${formatRupiah(actualFine)}**.`);
+                await interaction.followUp(aiMsg || `Gagal! Lu ketangkep dan denda **${formatRupiah(actualFine)}**.`);
             }
 
         } catch (error) {

@@ -35,7 +35,7 @@ export default {
 
         const item = getItem(itemId);
         if (!item) {
-            return interaction.reply({ content: "Barang gak nemu bang. Cek /shop dulu.", ephemeral: true });
+            return interaction.reply({ content: "Item tidak ditemukan. Cek /shop.", ephemeral: true });
         }
 
         await interaction.deferReply();
@@ -45,13 +45,13 @@ export default {
             const totalPrice = item.price * amount;
 
             if (userData.wallet < totalPrice) {
-                return interaction.followUp(`Duit kurang! Butuh **${formatRupiah(totalPrice)}** cash.`);
+                return interaction.followUp(`Saldo kurang. Butuh **${formatRupiah(totalPrice)}**.`);
             }
 
             await removeWallet(userId, totalPrice);
             await addItem(userId, itemId, amount);
 
-            await interaction.followUp(`Berhasil membeli **${amount}x ${item.name}** seharga **${formatRupiah(totalPrice)}**!`);
+            await interaction.followUp(`Berhasil membeli **${amount}x ${item.name}** seharga **${formatRupiah(totalPrice)}**.`);
 
         } catch (error) {
             console.error(error);

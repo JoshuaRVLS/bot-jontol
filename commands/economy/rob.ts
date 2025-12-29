@@ -41,7 +41,7 @@ export default {
             if (now.getTime() - lastRobCheck < actualCooldownMs) {
                 const timeLeftMin = Math.ceil((actualCooldownMs - (now.getTime() - lastRobCheck)) / 1000 / 60);
                 const aiMsg = await generateEconomyResponse("rob-cooldown", `Lu masih dicari polisi, sisa cooldown ${timeLeftMin} menit.`);
-                return interaction.followUp(aiMsg || `🚫 **COOLDOWN!** Lu masih buronan. Tunggu **${timeLeftMin} menit** lagi.`);
+                return interaction.followUp(aiMsg || `Lu masih dicari polisi. Tunggu **${timeLeftMin} menit** lagi.`);
             }
 
             if (userData.wallet < 10000) {
@@ -62,7 +62,7 @@ export default {
                 });
 
                 const aiMsg = await generateEconomyResponse("rob-shield", `Target ${targetUser.username} uses Shield (Preman Kampung). Mob beat you up.`);
-                return interaction.followUp(aiMsg || `🛡️ **GAGAL!** ${targetUser.username} punya **Shield**! Shield dia ancur.`);
+                return interaction.followUp(aiMsg || `Gagal! ${targetUser.username} punya **Shield**. Shield dia hancur.`);
             }
 
             // Robbery Logic
@@ -95,11 +95,10 @@ export default {
 
                 const aiMsg = await generateEconomyResponse("rob-success", `Stole ${formatRupiah(stealAmount)} from ${targetUser.username}. Win. ${bounty ? 'CLAIMED BOUNTY: ' + formatRupiah(bountyReward) : ''}`);
 
-                let response = aiMsg || `😈 **SUKSES!** Lu berhasil maling dari ${targetUser.username}!`;
+                let response = aiMsg || `Sukses! Lu dapet dari ${targetUser.username}.`;
                 if (bountyReward > 0) {
-                    response += `\n🎯 **BOUNTY CLAIMED:** Dapet tambahan **${formatRupiah(bountyReward)}**!`;
+                    response += `\n🎯 **Bounty:** Dapat tambahan **${formatRupiah(bountyReward)}**!`;
                 }
-                if (attackerBonus > 0) response += `\n✨ (Skills: +${Math.round(attackerBonus * 100)}% Success)`;
 
                 await interaction.followUp(response);
             } else {
@@ -108,8 +107,7 @@ export default {
                 await removeWallet(userId, actualFine);
 
                 const aiMsg = await generateEconomyResponse("rob-fail", `Caught while robbing ${targetUser.username}. Fine: ${formatRupiah(actualFine)}.`);
-                let response = aiMsg || `👮 **KETANGKEP!** Denda **${formatRupiah(actualFine)}** melayang.`;
-                if (defenderBonus > 0) response += `\n🛡️ (Defense Target: +${Math.round(defenderBonus * 100)}%)`;
+                let response = aiMsg || `Ketahuan! Denda **${formatRupiah(actualFine)}** melayang.`;
 
                 await interaction.followUp(response);
             }

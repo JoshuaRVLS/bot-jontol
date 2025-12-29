@@ -37,11 +37,11 @@ export default {
                 await addWallet(userId, totalValue);
 
                 const allEmbed = new EmbedBuilder()
-                    .setTitle("🏪 CUAN TOTAL! Skin Jontol Ludes!")
+                    .setTitle("Penjualan Massal Berhasil")
                     .setDescription(`Lu ngejual **${skins.length}** skin sekaligus!`)
                     .addFields(
-                        { name: "💰 Total Pemasukan", value: formatRupiah(totalValue), inline: true },
-                        { name: "🏦 Status", value: "Duit udah meluncur ke wallet lu.", inline: true }
+                        { name: "Total Pemasukan", value: formatRupiah(totalValue), inline: true },
+                        { name: "Status", value: "Duit udah meluncur ke wallet lu.", inline: true }
                     )
                     .setColor(0x00FF00)
                     .setTimestamp();
@@ -61,7 +61,7 @@ export default {
 
         const displaySkins = skins.slice(0, 25);
         const embed = new EmbedBuilder()
-            .setTitle("🏪 Pasar Gelap Skin Jontol")
+            .setTitle("Pasar Gelap Skin Jontol")
             .setDescription("Pilih skin yang mau lu jual dari menu di bawah.")
             .setColor(0xFFA500)
             .setFooter({ text: `Lu punya total ${skins.length} skin.` });
@@ -73,8 +73,7 @@ export default {
                 displaySkins.map(s => ({
                     label: s.name.substring(0, 100),
                     description: `Harga: ${formatRupiah(s.marketPrice || 0)} | Wear: ${s.wear || "N/A"}`,
-                    value: s.instanceId,
-                    emoji: "🔫"
+                    value: s.instanceId
                 }))
             );
 
@@ -107,9 +106,9 @@ export default {
                 await addWallet(userId, price);
 
                 const successEmbed = new EmbedBuilder()
-                    .setTitle("✅ Penjualan Berhasil!")
+                    .setTitle("Penjualan Berhasil")
                     .setDescription(`Lu ngejual **${removedSkin.name}** seharga **${formatRupiah(price)}**!`)
-                    .addFields({ name: "💰 Pemasukan", value: `+${formatRupiah(price)} masuk ke wallet!`, inline: true })
+                    .addFields({ name: "Pemasukan", value: `+${formatRupiah(price)} masuk ke wallet!`, inline: true })
                     .setColor(0x00FF00)
                     .setTimestamp();
 

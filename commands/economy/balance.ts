@@ -1,12 +1,14 @@
-
 import {
   SlashCommandBuilder,
+  AttachmentBuilder
 } from "discord.js";
 import type { Command } from "../../types/type";
 import {
   getUserData,
+  getTotalInvestmentValue
 } from "../../utils/Database";
-import { createBalanceEmbed, createBalanceButtons } from "../../utils/uiFactory";
+import { createBalanceButtons } from "../../utils/uiFactory";
+import { createBalanceCard } from "../../utils/imageCardHelper";
 
 export default {
   type: "command",
@@ -19,12 +21,20 @@ export default {
 
     try {
       const userData = await getUserData(interaction.user.id);
+      const totalInvestment = await getTotalInvestmentValue(interaction.user.id);
 
-      const embed = createBalanceEmbed(interaction.user, userData);
+      // Generate the Card Image
+      const cardBuffer = await createBalanceCard(interaction.user, {
+        wallet: userData.wallet,
+        bank: userData.bank,
+        investment: totalInvestment
+      });
+      const attachment = new AttachmentBuilder(cardBuffer, { name: "balance-card.png" });
+
       const actions = createBalanceButtons();
 
       await interaction.followUp({
-        embeds: [embed],
+        files: [attachment],
         components: [actions],
       });
     } catch (error) {

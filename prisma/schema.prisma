@@ -28,6 +28,7 @@ model User {
   dailyStreak Int       @default(0)
   xp          Int       @default(0)
   level       Int       @default(1)
+  scPity      Int       @default(0)
   createdAt   DateTime  @default(now())
   warnings    Warning[]
 }

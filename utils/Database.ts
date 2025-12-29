@@ -64,6 +64,27 @@ export const addWallet = async (userId: string, amount: number) => {
   });
 };
 
+export const updatePity = async (userId: string, amount: number) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { scPity: amount }
+  });
+};
+
+export const incrementPity = async (userId: string, amount: number = 1) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { scPity: { increment: amount } }
+  });
+};
+
+export const resetPity = async (userId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { scPity: 0 }
+  });
+};
+
 export const addBank = async (userId: string, amount: number) => {
   await getUserData(userId);
   return prisma.user.update({
@@ -300,6 +321,20 @@ export const updateInvestment = async (userId: string, assetId: string, amount: 
 
 export const getMarketAssets = async () => {
   return prisma.marketAsset.findMany();
+};
+
+export const getTotalInvestmentValue = async (userId: string) => {
+  const investments = await getInvestments(userId);
+  const assets = await getMarketAssets();
+
+  let totalValue = 0;
+  for (const [assetId, amount] of Object.entries(investments)) {
+    const asset = assets.find(a => a.id === assetId);
+    if (asset) {
+      totalValue += (amount as number) * asset.price;
+    }
+  }
+  return totalValue;
 };
 
 export const getMarketAsset = async (assetId: string) => {

@@ -26,7 +26,7 @@ export default {
             }
 
             const embed = new EmbedBuilder()
-                .setTitle(`🎒 Tas Belanja ${interaction.user.username}`)
+                .setTitle(`Tas Belanja ${interaction.user.username}`)
                 .setColor(0x8A2BE2)
                 .setThumbnail(interaction.user.displayAvatarURL());
 
@@ -49,7 +49,7 @@ export default {
             if (skins.length > 0) {
                 itemDesc += "\n### Koleksi Skin CS:GO\n";
                 skins.forEach((s: any) => {
-                    itemDesc += `🔫 **${s.name}**\n> 💎 Wear: ${s.wear || "N/A"}\n> 🏷️ Harga: ${s.marketPrice ? (s.marketPrice > 1000000 ? "🔥 " : "") + `Rp ${s.marketPrice.toLocaleString()}` : "N/A"}\n`;
+                    itemDesc += `**${s.name}**\n> Wear: ${s.wear || "N/A"}\n> Harga: ${s.marketPrice ? `Rp ${s.marketPrice.toLocaleString()}` : "N/A"}\n`;
                 });
             }
 
@@ -57,15 +57,15 @@ export default {
 
             // Add Skill Summary
             let skillSummary = "";
-            if (mods.workBonus) skillSummary += `📈 **Work Bonus:** +${Math.round(mods.workBonus * 100)}%\n`;
-            if (mods.crimeSuccess) skillSummary += `🦹 **Crime Success:** +${Math.round(mods.crimeSuccess * 100)}%\n`;
-            if (mods.robSuccess) skillSummary += `😈 **Rob Success:** +${Math.round(mods.robSuccess * 100)}%\n`;
-            if (mods.robProtection) skillSummary += `🛡️ **Defense:** +${Math.round(mods.robProtection * 100)}%\n`;
-            if (mods.cooldownReduction) skillSummary += `⚡ **Cooldown Reduction:** -${Math.round(mods.cooldownReduction * 100)}%\n`;
-            if (mods.dailyBonus) skillSummary += `💰 **Daily Bonus:** +${Math.round(mods.dailyBonus * 100)}%\n`;
+            if (mods.workBonus) skillSummary += `Work Bonus: +${Math.round(mods.workBonus * 100)}%\n`;
+            if (mods.crimeSuccess) skillSummary += `Crime Success: +${Math.round(mods.crimeSuccess * 100)}%\n`;
+            if (mods.robSuccess) skillSummary += `Rob Success: +${Math.round(mods.robSuccess * 100)}%\n`;
+            if (mods.robProtection) skillSummary += `Defense: +${Math.round(mods.robProtection * 100)}%\n`;
+            if (mods.cooldownReduction) skillSummary += `Cooldown Reduction: -${Math.round(mods.cooldownReduction * 100)}%\n`;
+            if (mods.dailyBonus) skillSummary += `Daily Bonus: +${Math.round(mods.dailyBonus * 100)}%\n`;
 
             if (skillSummary) {
-                embed.addFields({ name: "📊 Total Stat Modifiers", value: skillSummary });
+                embed.addFields({ name: "Total Stat Modifiers", value: skillSummary });
             }
 
             await interaction.followUp({ embeds: [embed] });
