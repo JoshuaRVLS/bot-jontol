@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const socketInstance = io(SOCKET_URL, {
-            transports: ["websocket", "polling"],
+            transports: ["polling"],
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
