@@ -65,6 +65,19 @@ io.on("connection", (socket) => {
         io.to(data.roomId).emit("new_message", data);
     });
 
+    // Battle Lobby Relays
+    socket.on("battle_room_created", (room: any) => {
+        io.emit("room_list_update", { action: "add", room });
+    });
+
+    socket.on("battle_room_updated", (room: any) => {
+        io.emit("room_list_update", { action: "update", room });
+    });
+
+    socket.on("battle_room_removed", (roomId: string) => {
+        io.emit("room_list_update", { action: "remove", roomId });
+    });
+
     // Suit Specific Relays
     socket.on("suit_room_created", (room: any) => {
         io.emit("suit_room_list_add", room);
