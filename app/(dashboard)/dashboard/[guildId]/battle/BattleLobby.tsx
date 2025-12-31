@@ -119,6 +119,7 @@ export const BattleLobby = ({
         });
 
         if (res.success && res.room) {
+            socket?.emit("battle_room_created", res.room); // Notify everyone
             router.push(`/dashboard/${guildId}/battle/${res.room.id}`);
         } else {
             toast(res.error || "Gagal membuat ruangan!", "error");
