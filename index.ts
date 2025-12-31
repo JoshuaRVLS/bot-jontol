@@ -99,6 +99,28 @@ io.on("connection", (socket) => {
         io.to(data.roomId).emit("game_revealed", data.room);
     });
 
+    // Typing Race Relays
+    socket.on("typing_room_created", (room: any) => {
+        io.emit("typing_room_list_add", room);
+    });
+
+    socket.on("typing_room_updated", (room: any) => {
+        io.to(room.id).emit("typing_room_update", room);
+        io.emit("typing_room_list_update", room);
+    });
+
+    socket.on("typing_room_removed", (roomId: string) => {
+        io.emit("typing_room_list_remove", roomId);
+    });
+
+    socket.on("typing_progress", (data: { roomId: string; userId: string; progress: number; wpm: number }) => {
+        socket.to(data.roomId).emit("player_progress", data);
+    });
+
+    socket.on("typing_finished", (data: { roomId: string; userId: string; wpm: number }) => {
+        io.to(data.roomId).emit("player_finished", data);
+    });
+
     socket.on("disconnect", () => {
         console.log(`[Socket.IO] Client disconnected: ${socket.id}`);
     });
