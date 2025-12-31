@@ -1,4 +1,4 @@
-export type CaseType = "budget" | "classic" | "highroller" | "elite" | "sultan" | "godtier";
+export type CaseType = "budget" | "classic" | "highroller" | "elite" | "sultan";
 
 export interface CaseConfig {
     name: string;
@@ -10,74 +10,62 @@ export interface CaseConfig {
 export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
     budget: {
         name: "Kasta Najis",
-        cost: 15000,
-        description: "Case murah dengan peluang item consumer grade yang tinggi.",
+        cost: 5000,
+        description: "Case murah buat yang bokek. Mostly sampah tapi kadang ada hoki.",
         weights: {
-            "consumer": 8000,
-            "industrial": 1500,
-            "mil-spec": 450,
-            "restricted": 45,
-            "classified": 4,
-            "covert": 1,
+            "consumer": 6000,
+            "industrial": 2500,
+            "mil-spec": 1200,
+            "restricted": 250,
+            "classified": 40,
+            "covert": 10,
         }
     },
     classic: {
         name: "Kasta Rendah",
-        cost: 100000,
-        description: "Case standar dengan odds yang mirip dengan official CS:GO.",
+        cost: 25000,
+        description: "Case standar dengan odds yang balanced.",
         weights: {
-            "consumer": 7500,
-            "industrial": 1500,
-            "mil-spec": 800,
-            "restricted": 150,
-            "classified": 40,
-            "covert": 8,
-            "extraordinary": 1,
-            "rare special": 1,
+            "consumer": 5000,
+            "industrial": 2500,
+            "mil-spec": 1500,
+            "restricted": 700,
+            "classified": 250,
+            "covert": 45,
+            "extraordinary": 5,
         }
     },
     highroller: {
-        name: "Kasta Menengah Kebawah",
-        cost: 1000000,
+        name: "Kasta Menengah",
+        cost: 100000,
         description: "Minimal drop Mil-Spec. Peluang item langka lebih tinggi.",
         weights: {
-            "mil-spec": 8000,
-            "restricted": 1500,
-            "classified": 400,
-            "covert": 80,
-            "extraordinary": 10,
-            "rare special": 10,
+            "mil-spec": 5000,
+            "restricted": 3000,
+            "classified": 1500,
+            "covert": 400,
+            "extraordinary": 100,
         }
     },
     elite: {
         name: "Kasta Tinggi",
-        cost: 10000000,
-        description: "Case eksklusif dengan drop minimal item Classified.",
+        cost: 500000,
+        description: "Case premium dengan drop minimal Restricted.",
         weights: {
-            "classified": 8500,
-            "covert": 1400,
-            "extraordinary": 50,
-            "rare special": 50,
+            "restricted": 5000,
+            "classified": 3500,
+            "covert": 1300,
+            "extraordinary": 200,
         }
     },
     sultan: {
         name: "Kasta Sultan",
-        cost: 100000000,
-        description: "BRUTAL GAMBLING. 92% chance rugi gede, 8% chance jackpot.",
+        cost: 2000000,
+        description: "Case terbaik. Minimal Classified dengan peluang jackpot tinggi.",
         weights: {
-            "covert": 9200, // 92% - MOSTLY TRASH
-            "extraordinary": 400, // 4% - jackpot
-            "rare special": 400, // 4% - jackpot
-        }
-    },
-    godtier: {
-        name: "Kasta Tuhan",
-        cost: 5000000000,
-        description: "Peluang luar biasa untuk item Extraordinary dan Rare Special.",
-        weights: {
-            "covert": 7000,
-            "extraordinary": 1500,
-            "rare special": 1500,
+            "classified": 5500,
+            "covert": 3500,
+            "extraordinary": 1000,
         }
     }
 };
@@ -85,18 +73,14 @@ export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
 export const getWeightedSkin = (skins: any[], caseType: CaseType = "classic", pityCount: number = 0, customWeights?: any) => {
     const weights = customWeights?.[caseType] ? { ...customWeights[caseType] } : { ...CASE_CONFIGS[caseType].weights };
 
-    // Apply pity: increase weights for Rare items
-    // Every 1 pity count increases rare odds by 5% (multiplicative)
-    const pityMultiplier = 1 + (pityCount * 0.05);
+    const pityMultiplier = 1 + (pityCount * 0.08);
 
     if (weights["covert"]) weights["covert"] = Math.floor(weights["covert"] * pityMultiplier);
     if (weights["extraordinary"]) weights["extraordinary"] = Math.floor(weights["extraordinary"] * pityMultiplier);
-    if (weights["rare special"]) weights["rare special"] = Math.floor(weights["rare special"] * pityMultiplier);
 
     const totalWeight = Object.values(weights).reduce((a, b) => (a as number) + (b as number), 0) as number;
     const random = Math.floor(Math.random() * totalWeight);
 
-    // Determine target rarity
     let currentSum = 0;
     let targetRarity = "consumer";
 
@@ -108,17 +92,14 @@ export const getWeightedSkin = (skins: any[], caseType: CaseType = "classic", pi
         }
     }
 
-    // Filter skins by target rarity
     const possibleSkins = skins.filter(s => {
         const r = s.rarity?.name?.toLowerCase() || "";
-        // Special mapping for gold/knives
-        if (targetRarity === "rare special" || targetRarity === "extraordinary") {
-            return r.includes("extraordinary") || r.includes("gold") || r.includes("rare special");
+        if (targetRarity === "extraordinary") {
+            return r.includes("extraordinary") || r.includes("gold") || r.includes("contraband");
         }
         return r.includes(targetRarity);
     });
 
-    // Fallback if no skins match (unlikely but possible with API changes)
     if (possibleSkins.length === 0) return skins[Math.floor(Math.random() * skins.length)];
 
     return possibleSkins[Math.floor(Math.random() * possibleSkins.length)];
@@ -136,43 +117,40 @@ export const getSkinFloat = (): { float: number, wear: string } => {
     return { float: parseFloat(float.toFixed(5)), wear };
 };
 
-// Removed priceScraper import as per user request to stop using web scraper.
-
 export const getSkinPrice = async (skin: any, float: number): Promise<number> => {
-    // Web scraper csgoskins.gg removed. Defaulting to rarity-based pricing.
     const rarityName = skin.rarity?.name?.toLowerCase() || "";
-    let basePrice = 1000;
+    let basePrice = 500;
 
-    if (rarityName.includes("industrial")) basePrice = 5000 + Math.random() * 15000;
-    else if (rarityName.includes("mil-spec")) basePrice = 20000 + Math.random() * 80000;
-    else if (rarityName.includes("restricted")) basePrice = 100000 + Math.random() * 400000;
-    else if (rarityName.includes("classified")) basePrice = 2000000 + Math.random() * 8000000;
-    else if (rarityName.includes("covert")) basePrice = 10000000 + Math.random() * 50000000;
-    else if (rarityName.includes("contraband") || rarityName.includes("extraordinary") || rarityName.includes("gold") || rarityName.includes("rare special")) {
-        basePrice = 500000000 + Math.random() * 1500000000;
+    if (rarityName.includes("industrial")) basePrice = 2000 + Math.random() * 3000;
+    else if (rarityName.includes("mil-spec")) basePrice = 8000 + Math.random() * 17000;
+    else if (rarityName.includes("restricted")) basePrice = 30000 + Math.random() * 70000;
+    else if (rarityName.includes("classified")) basePrice = 150000 + Math.random() * 350000;
+    else if (rarityName.includes("covert")) basePrice = 800000 + Math.random() * 1200000;
+    else if (rarityName.includes("contraband") || rarityName.includes("extraordinary") || rarityName.includes("gold")) {
+        basePrice = 5000000 + Math.random() * 15000000;
     } else {
-        basePrice = 500 + Math.random() * 4500;
+        basePrice = 300 + Math.random() * 1200;
     }
 
-    const wearMultiplier = 1.5 - (float * 1.0);
+    const wearMultiplier = 1.5 - (float * 0.8);
     return Math.floor(basePrice * wearMultiplier);
 };
 
 export const getSkinPriceSync = (rarityName: string, float: number): number => {
     const r = rarityName.toLowerCase();
-    let basePrice = 1000;
+    let basePrice = 500;
 
-    if (r.includes("industrial")) basePrice = 5000 + Math.random() * 15000;
-    else if (r.includes("mil-spec")) basePrice = 20000 + Math.random() * 80000;
-    else if (r.includes("restricted")) basePrice = 100000 + Math.random() * 400000;
-    else if (r.includes("classified")) basePrice = 2000000 + Math.random() * 8000000;
-    else if (r.includes("covert")) basePrice = 10000000 + Math.random() * 50000000;
-    else if (r.includes("contraband") || r.includes("extraordinary") || r.includes("gold") || r.includes("rare special")) {
-        basePrice = 500000000 + Math.random() * 1500000000;
+    if (r.includes("industrial")) basePrice = 2000 + Math.random() * 3000;
+    else if (r.includes("mil-spec")) basePrice = 8000 + Math.random() * 17000;
+    else if (r.includes("restricted")) basePrice = 30000 + Math.random() * 70000;
+    else if (r.includes("classified")) basePrice = 150000 + Math.random() * 350000;
+    else if (r.includes("covert")) basePrice = 800000 + Math.random() * 1200000;
+    else if (r.includes("contraband") || r.includes("extraordinary") || r.includes("gold")) {
+        basePrice = 5000000 + Math.random() * 15000000;
     } else {
-        basePrice = 500 + Math.random() * 4500;
+        basePrice = 300 + Math.random() * 1200;
     }
 
-    const wearMultiplier = 1.5 - (float * 1.0);
+    const wearMultiplier = 1.5 - (float * 0.8);
     return Math.floor(basePrice * wearMultiplier);
 };
