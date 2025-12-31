@@ -57,7 +57,7 @@ export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
     }
 };
 
-export const getWeightedSkin = (skins: any[], caseType: CaseType = "classic", pityCount: number = 0, customWeights?: any, streak: number = 0) => {
+export const getWeightedSkin = (skins: any[], caseType: CaseType = "highroller", pityCount: number = 0, customWeights?: any, streak: number = 0) => {
     const weights = customWeights?.[caseType] ? { ...customWeights[caseType] } : { ...CASE_CONFIGS[caseType].weights };
 
     const pityMultiplier = 1 + (pityCount * 0.08);

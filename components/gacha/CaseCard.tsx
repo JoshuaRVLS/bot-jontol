@@ -15,14 +15,13 @@ const CaseCard = ({ config, guildId }: CaseCardProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const colors: Record<string, string> = {
-        budget: "from-slate-500 via-slate-700 to-black border-slate-500/20 shadow-slate-500/10",
-        classic: "from-blue-500 via-indigo-600 to-black border-blue-500/20 shadow-blue-500/10",
         highroller: "from-purple-500 via-pink-600 to-black border-purple-500/30 shadow-purple-500/10",
         elite: "from-red-600 via-rose-700 to-black border-red-500/40 shadow-red-500/20",
         sultan: "from-amber-400 via-orange-500 to-black border-amber-400/50 shadow-amber-400/30",
+        godtier: "from-indigo-600 via-blue-700 to-black border-indigo-500/40 shadow-indigo-500/20",
     };
 
-    const gradientClass = colors[config.id] || colors.classic;
+    const gradientClass = colors[config.id] || colors.highroller;
 
     return (
         <>
