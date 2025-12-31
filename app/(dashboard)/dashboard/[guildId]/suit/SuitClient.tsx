@@ -76,6 +76,7 @@ export default function SuitClient({
     const [socket, setSocket] = useState<Socket | null>(null);
     const [rooms, setRooms] = useState<SuitRoom[]>([]);
     const [activeRoom, setActiveRoom] = useState<SuitRoom | null>(null);
+    const activeRoomRef = useRef(activeRoom);
     const [wallet, setWallet] = useState(initialWallet);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
@@ -189,9 +190,9 @@ export default function SuitClient({
         };
     }, [guildId, toast, userId]);
 
-    // Keep activeRoom ref up to date for socket closures
-    const activeRoomRef = useRef(activeRoom);
-    activeRoomRef.current = activeRoom;
+    useEffect(() => {
+        activeRoomRef.current = activeRoom;
+    }, [activeRoom]);
 
     // Handlers
     const handleCreateRoom = async () => {
