@@ -20,11 +20,11 @@ const server = http.createServer((req, res) => {
 
 const io = new SocketIOServer(server, {
     cors: {
-        origin: [DASHBOARD_URL, "http://localhost:3000", "http://localhost:3001"],
+        origin: "*",
         methods: ["GET", "POST"],
         credentials: true,
     },
-    transports: ["websocket", "polling"],
+    transports: ["polling"],
 });
 
 interface BattleRoom {
