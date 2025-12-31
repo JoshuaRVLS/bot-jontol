@@ -18,7 +18,7 @@ model User {
   name        String?
   avatar      String?
   bank        Float     @default(0)
-  wallet      Float     @default(100000)
+  wallet      Float     @default(10000000)
   lastDaily   DateTime?
   lastWork    DateTime?
   lastRob     DateTime?
@@ -35,6 +35,8 @@ model User {
   job         String?
   lastJobWork DateTime?
   gachaConfig Json?     // { "budget": { "consumer": 8000, ... }, ... }
+  lastGachaTime DateTime? // Track when they last played gacha
+  gachaStreak   Int       @default(0) // Track how many times they played in current session
   createdAt   DateTime  @default(now())
   warnings    Warning[]
 }
@@ -104,6 +106,8 @@ model BattleRoom {
   crateCount   Int      @default(1)
   maxPlayers   Int      @default(2)
   isPrivate    Boolean  @default(false)
+  crazyMode    Boolean  @default(false)
+  isTeamMode   Boolean  @default(false)
   status       String   @default("waiting") // waiting, running, finished
   participants Json     @default("[]") // [{id, name, avatar, ready}]
   spectators   Json     @default("[]") // [{id, name}]

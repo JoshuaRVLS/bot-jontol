@@ -44,13 +44,21 @@ export default {
                         .setDescription("Pilih jenis case buat battle")
                         .setRequired(true)
                         .addChoices(
-                            { name: "Kasta Najis (15k)", value: "budget" },
-                            { name: "Kasta Rendah (100k)", value: "classic" },
-                            { name: "Kasta Menengah (1M)", value: "highroller" },
-                            { name: "Kasta Tinggi (10M)", value: "elite" },
-                            { name: "Kasta Sultan (100M)", value: "sultan" },
+                            { name: "Standard Case (1M)", value: "highroller" },
+                            { name: "Special Case (10M)", value: "elite" },
+                            { name: "Omega Case (100M)", value: "sultan" },
                             { name: "Kasta Tuhan (5Miliar)", value: "godtier" }
                         )
+                )
+                .addBooleanOption(option =>
+                    option.setName("crazy")
+                        .setDescription("Crazy Mode: Yang paling murah yang menang!")
+                        .setRequired(false)
+                )
+                .addBooleanOption(option =>
+                    option.setName("team")
+                        .setDescription("Team Mode: 2vs2 CT vs T!")
+                        .setRequired(false)
                 )
         ),
     execute: async (interaction: ChatInputCommandInteraction) => {
@@ -58,9 +66,15 @@ export default {
         const target = interaction.options.getUser("target", true);
         const rounds = interaction.options.getInteger("rounds", true);
         const caseId = interaction.options.getString("case", true) as CaseType;
+        const isCrazy = interaction.options.getBoolean("crazy") || false;
+        const isTeam = interaction.options.getBoolean("team") || false;
         const config = CASE_CONFIGS[caseId];
 
         const totalCost = config.cost * rounds;
+
+        if (isTeam) {
+            return interaction.reply({ content: "Team Mode (CT vs T) buat saat ini baru ada di versi Web (Dashboard) bang! Cobain di sana bareng temen berempat.", ephemeral: true });
+        }
 
         if (target.id === challenger.id) {
             return interaction.reply({ content: "Lu mau battle lawan diri sendiri? Kesepian amat bang.", ephemeral: true });
@@ -80,7 +94,7 @@ export default {
 
         const inviteEmbed = new EmbedBuilder()
             .setTitle("⚔️ GACHA BATTLE CHALLENGE!")
-            .setDescription(`### ${challenger} nantangin ${target} buat Battle!\n\n**Detail Battle:**\n• **Total Ronde:** ${rounds}\n• **Case:** ${config.name}\n• **Modal / Ronde:** ${formatRupiah(config.cost)}\n• **Total Taruhan:** ${formatRupiah(totalCost)}\n\n> **INFO:** Kalau diterima, bot bakal bikin **Channel Privat** baru buat battle kalian!`)
+            .setDescription(`### ${challenger} nantangin ${target} buat Battle!\n\n**Detail Battle:**\n• **Total Ronde:** ${rounds}\n• **Case:** ${config.name}\n• **Modal / Ronde:** ${formatRupiah(config.cost)}\n• **Total Taruhan:** ${formatRupiah(totalCost)}\n• **Mode:** ${isCrazy ? "🤪 Crazy Mode" : "Normal"}\n\n> **INFO:** Kalau diterima, bot bakal bikin **Channel Privat** baru buat battle kalian!`)
             .setColor(0xFFA500)
             .setFooter({ text: "Waktu terima: 60 detik" })
             .setTimestamp();
@@ -142,8 +156,8 @@ export default {
 
                     const introEmbed = new EmbedBuilder()
                         .setTitle("⚔️ BATTLE DIMULAI!")
-                        .setDescription(`**${challenger.username}** vs **${target.username}**\n\n**Case:** ${config.name}\n**Total Ronde:** ${rounds}\n**Total Pot:** ${formatRupiah(totalCost * 2)}`)
-                        .setColor(0xFF0000)
+                        .setDescription(`**${challenger.username}** vs **${target.username}**\n\n**Case:** ${config.name}\n**Total Ronde:** ${rounds}\n**Mode:** ${isCrazy ? "🤪 Crazy Mode" : "Normal"}\n**Total Pot:** ${formatRupiah(totalCost * 2)}`)
+                        .setColor(isCrazy ? 0xFF00FF : 0xFF0000)
                         .setTimestamp();
 
                     await battleChannel.send({ embeds: [introEmbed] });
@@ -206,10 +220,10 @@ export default {
                     }
 
                     const allSkins = [...challengerSkins, ...targetSkins];
-                    const winner = challengerTotal > targetTotal ? challenger : target;
-                    const loser = winner.id === challenger.id ? target : challenger;
-                    const winnerTotal = winner.id === challenger.id ? challengerTotal : targetTotal;
-                    const loserTotal = winner.id === challenger.id ? targetTotal : challengerTotal;
+                    const challengerWins = isCrazy ? challengerTotal < targetTotal : challengerTotal > targetTotal;
+                    const winner = challengerWins ? challenger : target;
+                    const winnerTotal = challengerWins ? challengerTotal : targetTotal;
+                    const loserTotal = challengerWins ? targetTotal : challengerTotal;
 
                     await addCSGOSkins(winner.id, allSkins);
 
@@ -237,4 +251,3 @@ export default {
         });
     },
 } as Command;
-

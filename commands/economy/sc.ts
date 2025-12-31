@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
 import { Command } from "../../types/type";
 import { getSkinPrice, getWeightedSkin, getSkinFloat, CASE_CONFIGS, CaseType } from "../../utils/csgoHelper";
-import { getUserData, addCSGOSkins, removeWallet, addCSGOSkin, incrementPity, resetPity, updatePity, getGuildConfig } from "../../utils/Database";
+import { getUserData, addCSGOSkins, removeWallet, addCSGOSkin, incrementPity, resetPity, updatePity, getGuildConfig, updateGachaSession } from "../../utils/Database";
 import { formatRupiah } from "../../utils/format";
 
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json";
@@ -48,38 +48,20 @@ export default {
                         .setDescription("Pilih jenis case")
                         .setRequired(true)
                         .addChoices(
-                            { name: "Kasta Najis (15k)", value: "budget" },
-                            { name: "Kasta Rendah (100k)", value: "classic" },
-                            { name: "Kasta Menengah Kebawah (1M)", value: "highroller" },
-                            { name: "Kasta Tinggi (10M)", value: "elite" },
-                            { name: "Kasta Sultan (100M)", value: "sultan" },
+                            { name: "Standard Case (100k)", value: "highroller" },
+                            { name: "Special Case (500k)", value: "elite" },
+                            { name: "Omega Case (2M)", value: "sultan" },
                             { name: "Kasta Tuhan (5Miliar)", value: "godtier" }
                         )
                 )
                 .addIntegerOption(opt =>
                     opt.setName("jumlah")
-                        .setDescription("Jumlah gacha (Max 10)")
+                        .setDescription("Jumlah gacha (Max 5)")
                         .setMinValue(1)
-                        .setMaxValue(10)
+                        .setMaxValue(5)
                 )
         )
-        .addSubcommand(sub =>
-            sub.setName("allin")
-                .setDescription("Habisin seluruh uang di wallet buat gacha case pilihan!")
-                .addStringOption(opt =>
-                    opt.setName("case")
-                        .setDescription("Pilih jenis case")
-                        .setRequired(true)
-                        .addChoices(
-                            { name: "Kasta Najis (15k)", value: "budget" },
-                            { name: "Kasta Rendah (100k)", value: "classic" },
-                            { name: "Kasta Menengah Kebawah (1M)", value: "highroller" },
-                            { name: "Kasta Tinggi (10M)", value: "elite" },
-                            { name: "Kasta Sultan (100M)", value: "sultan" },
-                            { name: "Kasta Tuhan (5Miliar)", value: "godtier" }
-                        )
-                )
-        ),
+    ,
     execute: async (interaction: ChatInputCommandInteraction) => {
         const subcommand = interaction.options.getSubcommand();
 
@@ -109,16 +91,7 @@ export default {
         const config = CASE_CONFIGS[caseId];
         let executionCount = 1;
 
-        if (subcommand === "allin") {
-            executionCount = Math.floor(user.wallet / config.cost);
-            executionCount = Math.min(executionCount, 10);
-
-            if (executionCount <= 0) {
-                return interaction.editReply({
-                    content: `Saldo lu gak cukup buat beli **${config.name}**.`
-                });
-            }
-        } else if (subcommand === "buy") {
+        if (subcommand === "buy") {
             executionCount = interaction.options.getInteger("jumlah") || 1;
         }
 
@@ -144,13 +117,28 @@ export default {
             let currentPity = user.scPity || 0;
             let pityReset = false;
 
+            // Session/Streak Logic
+            const now = new Date();
+            let lastGachaTime = user.lastGachaTime ? new Date(user.lastGachaTime) : null;
+            let gachaStreak = user.gachaStreak || 0;
+
+            // Reset streak if last played > 1 hour ago
+            if (!lastGachaTime || (now.getTime() - lastGachaTime.getTime() > 3600000)) {
+                gachaStreak = 0;
+            }
+
+            const initialStreak = gachaStreak; // Keep track of starting streak for this batch
+
             const guildConfig = await getGuildConfig(interaction.guildId || "");
 
             // PRIORITY: User Config > Guild Config > Default Weights (null passed to getWeightedSkin)
             const customWeights = user.gachaConfig || guildConfig?.gachaConfig;
 
             for (let i = 0; i < executionCount; i++) {
-                const rawSkin = getWeightedSkin(skinsCache!, caseId, currentPity, customWeights);
+                // Pass current streak + i (so each roll in a batch counts incrementally, or just use batch start? 
+                // Using batch start + i makes sense for immediate effect)
+                const effectiveStreak = initialStreak + i;
+                const rawSkin = getWeightedSkin(skinsCache!, caseId, currentPity, customWeights, effectiveStreak);
                 const rarity = rawSkin.rarity?.name?.toLowerCase() || "";
 
                 if (rarity.includes("covert") || rarity.includes("extraordinary") || rarity.includes("gold") || rarity.includes("rare special")) {
@@ -195,6 +183,9 @@ export default {
 
             // Update user's final pity state in DB
             await updatePity(userId, currentPity);
+
+            // Update Gacha Session
+            await updateGachaSession(userId, now, initialStreak + executionCount);
 
             if (executionCount === 1) {
                 const skin = skinsToDraw[0];

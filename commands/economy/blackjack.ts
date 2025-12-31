@@ -25,7 +25,7 @@ export default {
                 .setMinValue(5000)),
     execute: async (interaction: ChatInputCommandInteraction) => {
         const userId = interaction.user.id;
-        const bet = interaction.options.getNumber("bet", true);
+        let bet = interaction.options.getNumber("bet", true);
 
         const userData = await getUserData(userId);
         if (userData.wallet < bet) {
@@ -36,6 +36,9 @@ export default {
 
         // Initial setup
         const deck = createDeck();
+        // Burn one card (Standard Casino Rule)
+        deck.pop();
+
         const playerHand: Card[] = [deck.pop()!, deck.pop()!];
         const dealerHand: Card[] = [deck.pop()!, deck.pop()!];
 
@@ -56,14 +59,18 @@ export default {
             return embed;
         };
 
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder().setCustomId("hit").setLabel("Hit (Ambil)").setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId("stand").setLabel("Stand (Cukup)").setStyle(ButtonStyle.Secondary)
-        );
+        const getButtons = (disableDouble: boolean = false) => {
+            return new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder().setCustomId("hit").setLabel("Hit").setStyle(ButtonStyle.Primary),
+                new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("double").setLabel("Double Down").setStyle(ButtonStyle.Success).setDisabled(disableDouble),
+                new ButtonBuilder().setCustomId("surrender").setLabel("Surrender").setStyle(ButtonStyle.Danger)
+            );
+        };
 
         const response = await interaction.editReply({
             embeds: [getEmbed()],
-            components: [row]
+            components: [getButtons()]
         });
 
         // Deduct bet initially
@@ -85,14 +92,59 @@ export default {
                 } else if (score === 21) {
                     collector.stop("blackjack");
                 } else {
+                    // Disable Double Down and Surrender after first hit
+                    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder().setCustomId("hit").setLabel("Hit").setStyle(ButtonStyle.Primary),
+                        new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Secondary)
+                    );
                     await i.update({ embeds: [getEmbed()], components: [row] });
                 }
             } else if (i.customId === "stand") {
                 collector.stop("stand");
+            } else if (i.customId === "double") {
+                // Check balance logic
+                const currentUserData = await getUserData(userId);
+                if (currentUserData.wallet < bet) {
+                    await i.reply({ content: `Duit lu kurang buat Double Down! Butuh **${formatRupiah(bet)}** lagi.`, ephemeral: true });
+                    return;
+                }
+
+                // Deduct extra bet
+                await removeWallet(userId, bet);
+                bet *= 2; // Double the bet
+
+                // Hit exactly once
+                playerHand.push(deck.pop()!);
+
+                // Immediately end turn (stand or bust)
+                const score = calculateScore(playerHand);
+                if (score > 21) {
+                    collector.stop("bust");
+                } else {
+                    collector.stop("stand");
+                }
+            } else if (i.customId === "surrender") {
+                collector.stop("surrender");
             }
         });
 
         collector.on("end", async (_, reason) => {
+            if (reason === "surrender") {
+                const refund = bet / 2;
+                await addWallet(userId, refund);
+
+                const finalEmbed = getEmbed(true);
+                finalEmbed.setTitle("🏳️ Surrender");
+                finalEmbed.setDescription(`Lu nyerah. Duit balik setengah (**${formatRupiah(refund)}**).`);
+                finalEmbed.setColor(0xFFA500); // Orange
+
+                await interaction.editReply({
+                    embeds: [finalEmbed],
+                    components: []
+                });
+                return;
+            }
+
             let playerScore = calculateScore(playerHand);
             let dealerScore = calculateScore(dealerHand);
 
@@ -112,7 +164,7 @@ export default {
                 winMultiplier = 0;
             } else if (dealerScore > 21) {
                 resultMsg = "🎉 **DEALER BUST!** Lu menang!";
-                winMultiplier = 2;
+                winMultiplier = 2; // Normal win returns 2x bet (profit 1x)
             } else if (playerScore > dealerScore) {
                 resultMsg = "🏆 **MENANG!** Kartu lu lebih gede.";
                 winMultiplier = 2;
@@ -124,8 +176,14 @@ export default {
                 winMultiplier = 1;
             }
 
+            // Blackjack payoff 3:2 (2.5x total return) - Only on natural 21 with 2 cards
+            if (playerScore === 21 && playerHand.length === 2 && winMultiplier === 2) {
+                resultMsg = "🃏 **BLACKJACK!** King of Gambling!";
+                winMultiplier = 2.5;
+            }
+
             if (winMultiplier > 0) {
-                await addWallet(userId, bet * winMultiplier);
+                await addWallet(userId, Math.floor(bet * winMultiplier));
             }
 
             // AI commentary
@@ -134,6 +192,10 @@ export default {
 
             const finalEmbed = getEmbed(true);
             finalEmbed.setDescription(`${resultMsg}\n\n> ${aiComment || "Gak bisa berkata-kata gue."}`);
+            // Payout info in footer
+            if (winMultiplier > 0) {
+                finalEmbed.setFooter({ text: `Payout: ${formatRupiah(Math.floor(bet * winMultiplier))}` });
+            }
 
             await interaction.editReply({
                 embeds: [finalEmbed],

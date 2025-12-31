@@ -85,6 +85,16 @@ export const resetPity = async (userId: string) => {
   });
 };
 
+export const updateGachaSession = async (userId: string, lastGachaTime: Date, streak: number) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      lastGachaTime,
+      gachaStreak: streak
+    }
+  });
+};
+
 export const addBank = async (userId: string, amount: number) => {
   await getUserData(userId);
   return prisma.user.update({

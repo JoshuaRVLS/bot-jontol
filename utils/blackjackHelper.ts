@@ -6,24 +6,31 @@ export interface Card {
     rank: Rank;
 }
 
-export const createDeck = (): Card[] => {
+export const createDeck = (decks: number = 6): Card[] => {
     const suits: Suit[] = ["♠️", "♥️", "♦️", "♣️"];
     const ranks: Rank[] = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
     const deck: Card[] = [];
 
-    for (const suit of suits) {
-        for (const rank of ranks) {
-            deck.push({ suit, rank });
+    for (let i = 0; i < decks; i++) {
+        for (const suit of suits) {
+            for (const rank of ranks) {
+                deck.push({ suit, rank });
+            }
         }
     }
 
     return shuffle(deck);
 };
 
+import { randomInt } from "crypto";
+
 const shuffle = (deck: Card[]): Card[] => {
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
+    // Shuffle 3 times for 'casino grade' thoroughness
+    for (let s = 0; s < 3; s++) {
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = randomInt(0, i + 1);
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
     }
     return deck;
 };
