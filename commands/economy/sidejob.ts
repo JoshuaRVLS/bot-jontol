@@ -52,7 +52,7 @@ export default {
         ];
 
         const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
-        const baseSalary = Math.floor(Math.random() * (100000 - 20000 + 1)) + 20000;
+        const baseSalary = Math.floor(Math.random() * (1000000 - 200000 + 1)) + 200000;
         const salary = applyBonus(baseSalary, mods.workBonus || 0);
 
         try {

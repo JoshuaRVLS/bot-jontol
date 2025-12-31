@@ -11,15 +11,23 @@ import {
     TextChannel
 } from "discord.js";
 import { Command } from "../../types/type";
-import { getUserData, addCSGOSkins, removeWallet } from "../../utils/Database";
+import { getUserData, removeWallet, addCSGOSkins } from "../../utils/Database";
 import { formatRupiah } from "../../utils/format";
-import { getSkinPrice, getWeightedSkin, getSkinFloat } from "../../utils/csgoHelper";
+import { getSkinPrice, getWeightedSkin, getSkinFloat, CASE_CONFIGS, CaseType } from "../../utils/csgoHelper";
 
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json";
 
 let skinsCache: any[] | null = null;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const fetchSkins = async () => {
+    if (!skinsCache) {
+        const response = await fetch(API_URL);
+        skinsCache = await response.json();
+    }
+    return skinsCache!;
+};
 
 export default {
     type: "command",
@@ -31,14 +39,28 @@ export default {
                 .setDescription("Challenge user buat adu keberuntungan di channel privat")
                 .addUserOption(opt => opt.setName("target").setDescription("User yang mau di-challenge").setRequired(true))
                 .addIntegerOption(opt => opt.setName("rounds").setDescription("Jumlah ronde (1-10)").setMinValue(1).setMaxValue(10).setRequired(true))
-                .addIntegerOption(opt => opt.setName("price").setDescription("Modal per ronde (Default: 100k)").setMinValue(10000).setMaxValue(50000000).setRequired(false))
+                .addStringOption(opt =>
+                    opt.setName("case")
+                        .setDescription("Pilih jenis case buat battle")
+                        .setRequired(true)
+                        .addChoices(
+                            { name: "Kasta Najis (15k)", value: "budget" },
+                            { name: "Kasta Rendah (100k)", value: "classic" },
+                            { name: "Kasta Menengah (1M)", value: "highroller" },
+                            { name: "Kasta Tinggi (10M)", value: "elite" },
+                            { name: "Kasta Sultan (100M)", value: "sultan" },
+                            { name: "Kasta Tuhan (5Miliar)", value: "godtier" }
+                        )
+                )
         ),
     execute: async (interaction: ChatInputCommandInteraction) => {
         const challenger = interaction.user;
         const target = interaction.options.getUser("target", true);
         const rounds = interaction.options.getInteger("rounds", true);
-        const pricePerRound = interaction.options.getInteger("price") || 100000;
-        const totalCost = pricePerRound * rounds;
+        const caseId = interaction.options.getString("case", true) as CaseType;
+        const config = CASE_CONFIGS[caseId];
+
+        const totalCost = config.cost * rounds;
 
         if (target.id === challenger.id) {
             return interaction.reply({ content: "Lu mau battle lawan diri sendiri? Kesepian amat bang.", ephemeral: true });
@@ -58,7 +80,7 @@ export default {
 
         const inviteEmbed = new EmbedBuilder()
             .setTitle("⚔️ GACHA BATTLE CHALLENGE!")
-            .setDescription(`### ${challenger} nantangin ${target} buat Battle!\n\n**Detail Battle:**\n• **Total Ronde:** ${rounds}\n• **Modal / Ronde:** ${formatRupiah(pricePerRound)}\n• **Total Taruhan:** ${formatRupiah(totalCost)}\n\n> **INFO:** Kalau diterima, bot bakal bikin **Channel Privat** baru buat battle kalian!`)
+            .setDescription(`### ${challenger} nantangin ${target} buat Battle!\n\n**Detail Battle:**\n• **Total Ronde:** ${rounds}\n• **Case:** ${config.name}\n• **Modal / Ronde:** ${formatRupiah(config.cost)}\n• **Total Taruhan:** ${formatRupiah(totalCost)}\n\n> **INFO:** Kalau diterima, bot bakal bikin **Channel Privat** baru buat battle kalian!`)
             .setColor(0xFFA500)
             .setFooter({ text: "Waktu terima: 60 detik" })
             .setTimestamp();
@@ -97,132 +119,122 @@ export default {
                 collector.stop("accepted");
 
                 try {
-                    if (!skinsCache) {
-                        const res = await fetch(API_URL);
-                        skinsCache = await res.json();
-                    }
+                    await removeWallet(challenger.id, totalCost);
+                    await removeWallet(target.id, totalCost);
 
-                    // Create Private Channel
                     const guild = interaction.guild!;
                     const battleChannel = await guild.channels.create({
-                        name: `battle-${challenger.username}-vs-${target.username}`.substring(0, 32),
+                        name: `battle-${challenger.username}-vs-${target.username}`,
                         type: ChannelType.GuildText,
                         permissionOverwrites: [
                             { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
                             { id: challenger.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
                             { id: target.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
-                            { id: interaction.client.user!.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
+                            { id: interaction.client.user!.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] }
                         ]
                     });
 
-                    await interaction.followUp({ content: `✅ Arena siap bang! Langsung gas ke ${battleChannel}!`, ephemeral: false });
+                    await interaction.followUp({
+                        content: `${challenger} ${target} Arena sudah siap! Klik ${battleChannel} untuk masuk.`
+                    });
 
-                    // Deduct
-                    await removeWallet(challenger.id, totalCost);
-                    await removeWallet(target.id, totalCost);
+                    const skins = await fetchSkins();
 
-                    let challengerTotal = 0;
-                    let targetTotal = 0;
-                    const challengerPulls: any[] = [];
-                    const targetPulls: any[] = [];
-
-                    for (let r = 1; r <= rounds; r++) {
-                        // REVEAL PHASE
-                        const initEmbed = new EmbedBuilder()
-                            .setTitle(`⚔️ BATTLE: ROUND ${r}/${rounds}`)
-                            .setDescription(`🎰 **Gacha lagi di-roll...**`)
-                            .setColor(0xFEE75C)
-                            .addFields(
-                                { name: `🙋‍♂️ ${challenger.username}`, value: `Rolling... 🎲`, inline: true },
-                                { name: `🎯 ${target.username}`, value: `Rolling... 🎲`, inline: true },
-                                { name: `📊 Skor Sementara`, value: `**${challenger.username}**: ${formatRupiah(challengerTotal)}\n**${target.username}**: ${formatRupiah(targetTotal)}`, inline: false }
-                            );
-
-                        const roundMsg = await battleChannel.send({ embeds: [initEmbed] });
-
-                        await sleep(2000);
-
-                        // Reveal Challenger
-                        const cSkin = getWeightedSkin(skinsCache!);
-                        const cFloat = getSkinFloat();
-                        const cPrice = getSkinPrice(cSkin.rarity?.name || "Consumer Grade", cFloat.float);
-                        challengerPulls.push({ ...cSkin, marketPrice: cPrice, ...cFloat });
-                        challengerTotal += cPrice;
-
-                        const revealCEmbed = EmbedBuilder.from(initEmbed)
-                            .setColor(cSkin.rarity?.color || 0xFEE75C)
-                            .setFields(
-                                { name: `🙋‍♂️ ${challenger.username}`, value: `✨ **${cSkin.weapon?.name} | ${cSkin.pattern?.name}**\nPrice: ${formatRupiah(cPrice)}`, inline: true },
-                                { name: `🎯 ${target.username}`, value: `Rolling... 🎲`, inline: true },
-                                { name: `📊 Skor Sementara`, value: `**${challenger.username}**: ${formatRupiah(challengerTotal)}\n**${target.username}**: ${formatRupiah(targetTotal)}`, inline: false }
-                            )
-                            .setImage(cSkin.image);
-
-                        await roundMsg.edit({ embeds: [revealCEmbed] });
-                        await sleep(2000);
-
-                        // Reveal Target
-                        const tSkin = getWeightedSkin(skinsCache!);
-                        const tFloat = getSkinFloat();
-                        const tPrice = getSkinPrice(tSkin.rarity?.name || "Consumer Grade", tFloat.float);
-                        targetPulls.push({ ...tSkin, marketPrice: tPrice, ...tFloat });
-                        targetTotal += tPrice;
-
-                        const revealBothEmbed = EmbedBuilder.from(revealCEmbed)
-                            .setColor(tPrice > cPrice ? (tSkin.rarity?.color || 0x00FF00) : (cSkin.rarity?.color || 0x00FF00))
-                            .setFields(
-                                { name: `🙋‍♂️ ${challenger.username}`, value: `✨ **${cSkin.weapon?.name} | ${cSkin.pattern?.name}**\nPrice: ${formatRupiah(cPrice)}`, inline: true },
-                                { name: `🎯 ${target.username}`, value: `✨ **${tSkin.weapon?.name} | ${tSkin.pattern?.name}**\nPrice: ${formatRupiah(tPrice)}`, inline: true },
-                                { name: `📊 Skor Sementara`, value: `**${challenger.username}**: ${formatRupiah(challengerTotal)}\n**${target.username}**: ${formatRupiah(targetTotal)}`, inline: false }
-                            )
-                            .setImage(tPrice > cPrice ? tSkin.image : cSkin.image)
-                            .setFooter({ text: `Leader: ${challengerTotal > targetTotal ? challenger.username : (targetTotal > challengerTotal ? target.username : "Tie")}` });
-
-                        await roundMsg.edit({ embeds: [revealBothEmbed] });
-                        await sleep(3000);
-                    }
-
-                    // FINAL RESULT
-                    let winnerId = "";
-                    let winnerName = "";
-                    let isTie = false;
-
-                    if (challengerTotal > targetTotal) {
-                        winnerId = challenger.id; winnerName = challenger.username;
-                    } else if (targetTotal > challengerTotal) {
-                        winnerId = target.id; winnerName = target.username;
-                    } else {
-                        isTie = true;
-                        if (Math.random() > 0.5) { winnerId = challenger.id; winnerName = challenger.username; }
-                        else { winnerId = target.id; winnerName = target.username; }
-                    }
-
-                    const allSkins = [...challengerPulls, ...targetPulls];
-                    await addCSGOSkins(winnerId, allSkins);
-
-                    const finalEmbed = new EmbedBuilder()
-                        .setTitle(`🏆 BATTLE OVER: ${winnerName} MENANG!`)
-                        .setDescription(`💸 **WINNER TAKES ALL!**\nSikat semua **${allSkins.length} skin** dengan total estimasi **${formatRupiah(challengerTotal + targetTotal)}**!${isTie ? "\n\n*(Hasil seri, pemenang ditentukan lewat final coinflip)*" : ""}`)
-                        .setColor(0x00FF00)
-                        .setFields(
-                            { name: `🙋‍♂️ ${challenger.username}`, value: `Total: **${formatRupiah(challengerTotal)}**`, inline: true },
-                            { name: `🎯 ${target.username}`, value: `Total: **${formatRupiah(targetTotal)}**`, inline: true }
-                        )
-                        .setThumbnail(challengerTotal > targetTotal ? challenger.displayAvatarURL() : target.displayAvatarURL())
-                        .setFooter({ text: "Channel ini bakal dihapus dalam 60 detik." })
+                    const introEmbed = new EmbedBuilder()
+                        .setTitle("⚔️ BATTLE DIMULAI!")
+                        .setDescription(`**${challenger.username}** vs **${target.username}**\n\n**Case:** ${config.name}\n**Total Ronde:** ${rounds}\n**Total Pot:** ${formatRupiah(totalCost * 2)}`)
+                        .setColor(0xFF0000)
                         .setTimestamp();
 
-                    await battleChannel.send({ content: `🎉 **SELAMAT LU MENANG ${winnerName}!**`, embeds: [finalEmbed] });
+                    await battleChannel.send({ embeds: [introEmbed] });
+                    await sleep(2000);
 
-                    setTimeout(() => {
-                        battleChannel.delete().catch(console.error);
-                    }, 60000);
+                    const challengerSkins: any[] = [];
+                    const targetSkins: any[] = [];
+                    let challengerTotal = 0;
+                    let targetTotal = 0;
+
+                    for (let round = 1; round <= rounds; round++) {
+                        const roundEmbed = new EmbedBuilder()
+                            .setTitle(`🎰 RONDE ${round}/${rounds}`)
+                            .setDescription("Rolling...")
+                            .setColor(0xFFD700);
+
+                        const roundMsg = await battleChannel.send({ embeds: [roundEmbed] });
+                        await sleep(1500);
+
+                        const challengerRaw = getWeightedSkin(skins, caseId, 0);
+                        const { float: cFloat, wear: cWear } = getSkinFloat();
+                        const cPrice = await getSkinPrice(challengerRaw, cFloat);
+                        const challengerSkin = {
+                            ...challengerRaw,
+                            name: `${challengerRaw.weapon?.name} | ${challengerRaw.pattern?.name}`,
+                            marketPrice: cPrice,
+                            float: cFloat,
+                            wear: cWear,
+                            instanceId: `${challengerRaw.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+                        };
+                        challengerSkins.push(challengerSkin);
+                        challengerTotal += cPrice;
+
+                        const targetRaw = getWeightedSkin(skins, caseId, 0);
+                        const { float: tFloat, wear: tWear } = getSkinFloat();
+                        const tPrice = await getSkinPrice(targetRaw, tFloat);
+                        const targetSkin = {
+                            ...targetRaw,
+                            name: `${targetRaw.weapon?.name} | ${targetRaw.pattern?.name}`,
+                            marketPrice: tPrice,
+                            float: tFloat,
+                            wear: tWear,
+                            instanceId: `${targetRaw.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+                        };
+                        targetSkins.push(targetSkin);
+                        targetTotal += tPrice;
+
+                        const resultEmbed = new EmbedBuilder()
+                            .setTitle(`🎰 RONDE ${round}/${rounds}`)
+                            .addFields(
+                                { name: `${challenger.username}`, value: `**${challengerSkin.name}**\n${challengerSkin.rarity?.name || "Unknown"}\n${formatRupiah(cPrice)}`, inline: true },
+                                { name: "VS", value: "⚔️", inline: true },
+                                { name: `${target.username}`, value: `**${targetSkin.name}**\n${targetSkin.rarity?.name || "Unknown"}\n${formatRupiah(tPrice)}`, inline: true }
+                            )
+                            .setColor(cPrice > tPrice ? 0x00FF00 : tPrice > cPrice ? 0xFF0000 : 0xFFFFFF)
+                            .setFooter({ text: cPrice > tPrice ? `${challenger.username} menang ronde ini!` : tPrice > cPrice ? `${target.username} menang ronde ini!` : "Seri!" });
+
+                        await roundMsg.edit({ embeds: [resultEmbed] });
+                        await sleep(2000);
+                    }
+
+                    const allSkins = [...challengerSkins, ...targetSkins];
+                    const winner = challengerTotal > targetTotal ? challenger : target;
+                    const loser = winner.id === challenger.id ? target : challenger;
+                    const winnerTotal = winner.id === challenger.id ? challengerTotal : targetTotal;
+                    const loserTotal = winner.id === challenger.id ? targetTotal : challengerTotal;
+
+                    await addCSGOSkins(winner.id, allSkins);
+
+                    const finalEmbed = new EmbedBuilder()
+                        .setTitle("🏆 BATTLE SELESAI!")
+                        .setDescription(`### ${winner} MENANG!\n\n**Total Skin:** ${allSkins.length} skins\n**Total Value:** ${formatRupiah(challengerTotal + targetTotal)}`)
+                        .addFields(
+                            { name: `${challenger.username}`, value: `${formatRupiah(challengerTotal)}`, inline: true },
+                            { name: `${target.username}`, value: `${formatRupiah(targetTotal)}`, inline: true }
+                        )
+                        .setColor(0xFFD700)
+                        .setFooter({ text: "Channel ini akan dihapus dalam 30 detik..." })
+                        .setTimestamp();
+
+                    await battleChannel.send({ content: `${challenger} ${target}`, embeds: [finalEmbed] });
+
+                    await sleep(30000);
+                    await battleChannel.delete().catch(() => { });
 
                 } catch (error) {
-                    console.error("Battle execution error:", error);
-                    await interaction.followUp("Gagal nge-run battle bang. Hubungi dev!");
+                    console.error("Battle error:", error);
+                    await interaction.followUp("Gagal bikin battle arena bang. Hubungi dev!");
                 }
             }
         });
     },
 } as Command;
+

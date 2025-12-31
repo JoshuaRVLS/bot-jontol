@@ -24,6 +24,7 @@
     "@prisma/extension-accelerate": "^2.0.2",
     "@snazzah/davey": "^0.1.9",
     "@types/express": "^5.0.6",
+    "cheerio": "^1.1.2",
     "cli-table": "^0.3.11",
     "discord.js": "^14.22.1",
     "distube": "^5.2.3",
@@ -39,6 +40,7 @@
   "devDependencies": {
     "@prisma/client": "^6.16.2",
     "@types/ms": "^2.1.0",
+    "@types/nat-upnp": "^1.1.5",
     "prisma": "^6.16.2"
   },
   "description": "",

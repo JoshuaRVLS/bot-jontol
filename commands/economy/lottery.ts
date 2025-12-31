@@ -33,17 +33,20 @@ export default {
             let prize = 0;
             let resultType = "lose";
 
-            if (luckRoll < 0.001) { // 0.1% Jackpot
-                prize = Math.floor(Math.random() * (50000000 - 10000000 + 1)) + 10000000;
+            if (luckRoll < 0.00001) { // 0.001% Doorprize (1 in 100,000)
+                prize = Math.floor(Math.random() * (1000000000000 - 500000000000 + 1)) + 500000000000;
+                resultType = "doorprize";
+            } else if (luckRoll < 0.001) { // 0.1% Jackpot
+                prize = Math.floor(Math.random() * (500000000 - 100000000 + 1)) + 100000000;
                 resultType = "jackpot";
             } else if (luckRoll < 0.01) { // 1% Major
-                prize = Math.floor(Math.random() * (5000000 - 1000000 + 1)) + 1000000;
+                prize = Math.floor(Math.random() * (50000000 - 10000000 + 1)) + 10000000;
                 resultType = "major";
             } else if (luckRoll < 0.11) { // 10% Minor
-                prize = Math.floor(Math.random() * (500000 - 100000 + 1)) + 100000;
+                prize = Math.floor(Math.random() * (5000000 - 1000000 + 1)) + 1000000;
                 resultType = "minor";
             } else if (luckRoll < 0.31) { // 20% Consolation
-                prize = Math.floor(Math.random() * (25000 - 5000 + 1)) + 5000;
+                prize = Math.floor(Math.random() * (250000 - 50000 + 1)) + 50000;
                 resultType = "consolation";
             }
 
@@ -57,7 +60,11 @@ export default {
                 .setTitle("🎰 Hasil Lottery Jontol")
                 .setTimestamp();
 
-            if (resultType === "jackpot") {
+            if (resultType === "doorprize") {
+                embed.setColor(0xFF00FF) // Purple
+                    .setDescription(`💎 **TUHAN ADALAH SAKSI!! DOORPRIZE 1 TRILIUN TEMBUS!!** 💎\n\nLu dapet hadiah paling gila di jagat raya: **${formatRupiah(prize)}**!\n\nSeluruh dunia bakal tau kalo lu adalah dewa hoki!`)
+                    .setFooter({ text: "Gak mungkin... ini pasti cheat." });
+            } else if (resultType === "jackpot") {
                 embed.setColor(0xFFD700) // Gold
                     .setDescription(`🎉 **GOKIL!! JACKPOT ANJING!!** 🎉\n\nLu dapet hadiah utama sebesar **${formatRupiah(prize)}**! Lu sekarang jadi sultan dadakan!`)
                     .setFooter({ text: "Sumpah ini hoki banget parah." });

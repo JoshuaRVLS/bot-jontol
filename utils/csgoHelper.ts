@@ -1,4 +1,4 @@
-export type CaseType = "budget" | "classic" | "highroller" | "elite" | "sultan";
+export type CaseType = "budget" | "classic" | "highroller" | "elite" | "sultan" | "godtier";
 
 export interface CaseConfig {
     name: string;
@@ -69,11 +69,21 @@ export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
             "extraordinary": 400, // 4% - jackpot
             "rare special": 400, // 4% - jackpot
         }
+    },
+    godtier: {
+        name: "Kasta Tuhan",
+        cost: 5000000000,
+        description: "Peluang luar biasa untuk item Extraordinary dan Rare Special.",
+        weights: {
+            "covert": 7000,
+            "extraordinary": 1500,
+            "rare special": 1500,
+        }
     }
 };
 
-export const getWeightedSkin = (skins: any[], caseType: CaseType = "classic", pityCount: number = 0) => {
-    const weights = { ...CASE_CONFIGS[caseType].weights };
+export const getWeightedSkin = (skins: any[], caseType: CaseType = "classic", pityCount: number = 0, customWeights?: any) => {
+    const weights = customWeights?.[caseType] ? { ...customWeights[caseType] } : { ...CASE_CONFIGS[caseType].weights };
 
     // Apply pity: increase weights for Rare items
     // Every 1 pity count increases rare odds by 5% (multiplicative)
@@ -126,25 +136,43 @@ export const getSkinFloat = (): { float: number, wear: string } => {
     return { float: parseFloat(float.toFixed(5)), wear };
 };
 
-export const getSkinPrice = (rarityName: string, float: number): number => {
+// Removed priceScraper import as per user request to stop using web scraper.
+
+export const getSkinPrice = async (skin: any, float: number): Promise<number> => {
+    // Web scraper csgoskins.gg removed. Defaulting to rarity-based pricing.
+    const rarityName = skin.rarity?.name?.toLowerCase() || "";
+    let basePrice = 1000;
+
+    if (rarityName.includes("industrial")) basePrice = 5000 + Math.random() * 15000;
+    else if (rarityName.includes("mil-spec")) basePrice = 20000 + Math.random() * 80000;
+    else if (rarityName.includes("restricted")) basePrice = 100000 + Math.random() * 400000;
+    else if (rarityName.includes("classified")) basePrice = 2000000 + Math.random() * 8000000;
+    else if (rarityName.includes("covert")) basePrice = 10000000 + Math.random() * 50000000;
+    else if (rarityName.includes("contraband") || rarityName.includes("extraordinary") || rarityName.includes("gold") || rarityName.includes("rare special")) {
+        basePrice = 500000000 + Math.random() * 1500000000;
+    } else {
+        basePrice = 500 + Math.random() * 4500;
+    }
+
+    const wearMultiplier = 1.5 - (float * 1.0);
+    return Math.floor(basePrice * wearMultiplier);
+};
+
+export const getSkinPriceSync = (rarityName: string, float: number): number => {
     const r = rarityName.toLowerCase();
     let basePrice = 1000;
 
     if (r.includes("industrial")) basePrice = 5000 + Math.random() * 15000;
     else if (r.includes("mil-spec")) basePrice = 20000 + Math.random() * 80000;
     else if (r.includes("restricted")) basePrice = 100000 + Math.random() * 400000;
-    else if (r.includes("classified")) basePrice = 2000000 + Math.random() * 8000000; // 2M - 10M
-    else if (r.includes("covert")) basePrice = 10000000 + Math.random() * 50000000; // 10M - 60M (avg 35M = RUGI 65M per Sultan case!)
+    else if (r.includes("classified")) basePrice = 2000000 + Math.random() * 8000000;
+    else if (r.includes("covert")) basePrice = 10000000 + Math.random() * 50000000;
     else if (r.includes("contraband") || r.includes("extraordinary") || r.includes("gold") || r.includes("rare special")) {
-        basePrice = 500000000 + Math.random() * 1500000000; // 500M - 2B MEGA JACKPOT!
+        basePrice = 500000000 + Math.random() * 1500000000;
     } else {
         basePrice = 500 + Math.random() * 4500;
     }
 
-    // Wear Multiplier (Cleaner = More Expensive)
-    // 0.0 (FN) to 1.0 (BS)
-    // Mult: 1.5x (FN) down to 0.5x (BS)
     const wearMultiplier = 1.5 - (float * 1.0);
-
     return Math.floor(basePrice * wearMultiplier);
 };

@@ -210,20 +210,21 @@ export const addCSGOSkins = async (userId: string, skins: any[]) => {
     inv.csSkins = [];
   }
 
-  const newInstances = skins.map(skin => ({
-    ...skin,
-    instanceId: `${skin.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    obtainedAt: new Date()
-  }));
-
-  inv.csSkins.push(...newInstances);
+  for (const skin of skins) {
+    const skinInstance = {
+      ...skin,
+      instanceId: skin.instanceId || `${skin.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      obtainedAt: new Date()
+    };
+    inv.csSkins.push(skinInstance);
+  }
 
   await prisma.user.update({
     where: { id: userId },
     data: { inventory: inv }
   });
 
-  return newInstances;
+  return inv.csSkins;
 };
 
 export const removeCSGOSkin = async (userId: string, instanceId: string) => {

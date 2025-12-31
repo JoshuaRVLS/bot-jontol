@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
 import { Command } from "../../types/type";
 import { getSkinPrice, getWeightedSkin, getSkinFloat, CASE_CONFIGS, CaseType } from "../../utils/csgoHelper";
-import { getUserData, addCSGOSkins, removeWallet, addCSGOSkin, incrementPity, resetPity, updatePity } from "../../utils/Database";
+import { getUserData, addCSGOSkins, removeWallet, addCSGOSkin, incrementPity, resetPity, updatePity, getGuildConfig } from "../../utils/Database";
 import { formatRupiah } from "../../utils/format";
 
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json";
@@ -52,14 +52,15 @@ export default {
                             { name: "Kasta Rendah (100k)", value: "classic" },
                             { name: "Kasta Menengah Kebawah (1M)", value: "highroller" },
                             { name: "Kasta Tinggi (10M)", value: "elite" },
-                            { name: "Kasta Sultan (100M)", value: "sultan" }
+                            { name: "Kasta Sultan (100M)", value: "sultan" },
+                            { name: "Kasta Tuhan (5Miliar)", value: "godtier" }
                         )
                 )
                 .addIntegerOption(opt =>
                     opt.setName("jumlah")
-                        .setDescription("Jumlah gacha (Max 50)")
+                        .setDescription("Jumlah gacha (Max 10)")
                         .setMinValue(1)
-                        .setMaxValue(50)
+                        .setMaxValue(10)
                 )
         )
         .addSubcommand(sub =>
@@ -74,7 +75,8 @@ export default {
                             { name: "Kasta Rendah (100k)", value: "classic" },
                             { name: "Kasta Menengah Kebawah (1M)", value: "highroller" },
                             { name: "Kasta Tinggi (10M)", value: "elite" },
-                            { name: "Kasta Sultan (100M)", value: "sultan" }
+                            { name: "Kasta Sultan (100M)", value: "sultan" },
+                            { name: "Kasta Tuhan (5Miliar)", value: "godtier" }
                         )
                 )
         ),
@@ -109,7 +111,7 @@ export default {
 
         if (subcommand === "allin") {
             executionCount = Math.floor(user.wallet / config.cost);
-            executionCount = Math.min(executionCount, 50);
+            executionCount = Math.min(executionCount, 10);
 
             if (executionCount <= 0) {
                 return interaction.editReply({
@@ -142,11 +144,15 @@ export default {
             let currentPity = user.scPity || 0;
             let pityReset = false;
 
+            const guildConfig = await getGuildConfig(interaction.guildId || "");
+
+            // PRIORITY: User Config > Guild Config > Default Weights (null passed to getWeightedSkin)
+            const customWeights = user.gachaConfig || guildConfig?.gachaConfig;
+
             for (let i = 0; i < executionCount; i++) {
-                const rawSkin = getWeightedSkin(skinsCache!, caseId, currentPity);
+                const rawSkin = getWeightedSkin(skinsCache!, caseId, currentPity, customWeights);
                 const rarity = rawSkin.rarity?.name?.toLowerCase() || "";
 
-                // Check if rare to reset pity
                 if (rarity.includes("covert") || rarity.includes("extraordinary") || rarity.includes("gold") || rarity.includes("rare special")) {
                     pityReset = true;
                     currentPity = 0;
@@ -155,7 +161,7 @@ export default {
                 }
 
                 const { float, wear } = getSkinFloat();
-                const marketPrice = getSkinPrice(rawSkin.rarity?.name || "Consumer Grade", float);
+                const marketPrice = await getSkinPrice(rawSkin, float);
                 const fullName = `${rawSkin.weapon?.name} | ${rawSkin.pattern?.name}`;
 
                 const skinData = {

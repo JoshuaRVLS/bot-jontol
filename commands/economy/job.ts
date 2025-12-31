@@ -21,8 +21,8 @@ const JOBS: JobData[] = [
         id: "kuli",
         name: "Kuli Bangunan",
         emoji: "🧱",
-        minSalary: 150000,
-        maxSalary: 250000,
+        minSalary: 1500000,
+        maxSalary: 2500000,
         levelRequired: 1,
         description: "Kerja berat, hasil sepadan"
     },
@@ -30,8 +30,8 @@ const JOBS: JobData[] = [
         id: "kasir",
         name: "Kasir Indomaret",
         emoji: "🏪",
-        minSalary: 200000,
-        maxSalary: 350000,
+        minSalary: 2000000,
+        maxSalary: 3500000,
         levelRequired: 3,
         description: "Shift panjang, bonus senyum"
     },
@@ -39,8 +39,8 @@ const JOBS: JobData[] = [
         id: "ojol",
         name: "Driver Ojol",
         emoji: "🏍️",
-        minSalary: 250000,
-        maxSalary: 400000,
+        minSalary: 2500000,
+        maxSalary: 4000000,
         levelRequired: 5,
         description: "Keliling kota, dapet tips"
     },
@@ -48,8 +48,8 @@ const JOBS: JobData[] = [
         id: "programmer",
         name: "Programmer",
         emoji: "💻",
-        minSalary: 500000,
-        maxSalary: 800000,
+        minSalary: 5000000,
+        maxSalary: 8000000,
         levelRequired: 10,
         description: "Ngoding sampe subuh, gaji gede"
     },
@@ -57,8 +57,8 @@ const JOBS: JobData[] = [
         id: "dokter",
         name: "Dokter",
         emoji: "🩺",
-        minSalary: 800000,
-        maxSalary: 1200000,
+        minSalary: 8000000,
+        maxSalary: 12000000,
         levelRequired: 15,
         description: "Selamatkan nyawa, duit mengalir"
     },
@@ -66,8 +66,8 @@ const JOBS: JobData[] = [
         id: "pengacara",
         name: "Pengacara",
         emoji: "⚖️",
-        minSalary: 1000000,
-        maxSalary: 1500000,
+        minSalary: 10000000,
+        maxSalary: 15000000,
         levelRequired: 20,
         description: "Bicara dengan hukum, bayaran mahal"
     },
@@ -75,8 +75,8 @@ const JOBS: JobData[] = [
         id: "ceo",
         name: "CEO Startup",
         emoji: "🚀",
-        minSalary: 2000000,
-        maxSalary: 3000000,
+        minSalary: 20000000,
+        maxSalary: 30000000,
         levelRequired: 30,
         description: "Pimpin perusahaan, untung besar"
     },
@@ -84,8 +84,8 @@ const JOBS: JobData[] = [
         id: "konglomerat",
         name: "Konglomerat",
         emoji: "💎",
-        minSalary: 5000000,
-        maxSalary: 8000000,
+        minSalary: 50000000,
+        maxSalary: 80000000,
         levelRequired: 50,
         description: "Sultan sejati, duit gak masalah"
     }

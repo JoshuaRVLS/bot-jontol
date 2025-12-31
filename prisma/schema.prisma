@@ -23,12 +23,18 @@ model User {
   lastWork    DateTime?
   lastRob     DateTime?
   lastCrime   DateTime?
+  lastBeg     DateTime?
+  lastHunt    DateTime?
+  lastFish    DateTime?
   inventory   Json      @default("{}")
   investments Json      @default("{}") // { "BTC": 0.05, "GOTO": 100 }
   dailyStreak Int       @default(0)
   xp          Int       @default(0)
   level       Int       @default(1)
   scPity      Int       @default(0)
+  job         String?
+  lastJobWork DateTime?
+  gachaConfig Json?     // { "budget": { "consumer": 8000, ... }, ... }
   createdAt   DateTime  @default(now())
   warnings    Warning[]
 }
@@ -83,5 +89,32 @@ model GuildConfig {
   leaveChannelId   String?
   welcomeMessage   String?  @default("Selamat datang {user} di {server}!")
   leaveMessage     String?  @default("{user} baru aja cabut dari {server}. Sedih banget.")
+  gachaConfig     Json?    // { "budget": { "consumer": 8000, ... }, "classic": { ... } }
   updatedAt        DateTime @default(now()) @updatedAt
+}
+
+model BattleRoom {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomCode     String   @unique
+  hostId       String
+  hostName     String
+  hostAvatar   String?
+  guildId      String
+  caseType     String   // budget, classic, highroller, elite, sultan
+  crateCount   Int      @default(1)
+  maxPlayers   Int      @default(2)
+  isPrivate    Boolean  @default(false)
+  status       String   @default("waiting") // waiting, running, finished
+  participants Json     @default("[]") // [{id, name, avatar, ready}]
+  spectators   Json     @default("[]") // [{id, name}]
+  results      Json?    // [{participantId, skins[], totalValue}]
+  winnerId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model Developer {
+  id        String   @id @map("_id")
+  name      String?
+  addedAt   DateTime @default(now())
 }
