@@ -1,6 +1,19 @@
 "use client";
 
-CheckCheck,
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+    Swords,
+    Crown,
+    Users,
+    Check,
+    Play,
+    Trophy,
+    Eye,
+    ArrowLeft,
+    Loader2,
+    Copy,
+    CheckCheck,
     Zap,
     History,
     Dices
