@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 
 interface SocketContextType {
@@ -15,18 +15,22 @@ const SocketContext = createContext<SocketContextType>({
 
 export const useSocket = () => useContext(SocketContext);
 
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000";
+
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
-    const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
-        const socketInstance = io("/battle", {
-            path: "/api/socket",
-            transports: ["websocket", "polling"]
+        const socketInstance = io(SOCKET_URL, {
+            transports: ["websocket", "polling"],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
         });
 
         socketInstance.on("connect", () => {
-            console.log("[Socket] Connected to battle server");
+            console.log("[Socket] Connected to battle server:", SOCKET_URL);
             setIsConnected(true);
         });
 
@@ -39,7 +43,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
             console.error("[Socket] Connection error:", err.message);
         });
 
-        setSocket(socketInstance);
+        socketRef.current = socketInstance;
 
         return () => {
             socketInstance.disconnect();
@@ -47,7 +51,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <SocketContext.Provider value={{ socket, isConnected }}>
+        <SocketContext.Provider value={{ socket: socketRef.current, isConnected }}>
             {children}
         </SocketContext.Provider>
     );
