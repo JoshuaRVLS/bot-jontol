@@ -83,12 +83,12 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
             icon: Gamepad2,
             defaultOpen: true,
             items: [
-                { label: "Gacha Battle", icon: Swords, href: `/dashboard/${guildId}/battle`, devOnly: false, highlight: true },
-                { label: "Blackjack", icon: Coins, href: `/dashboard/${guildId}/blackjack`, devOnly: false, highlight: true },
-                { label: "Slots Machine", icon: Dices, href: `/dashboard/${guildId}/slots`, devOnly: false, highlight: true },
-                { label: "Typing Race", icon: Keyboard, href: `/dashboard/${guildId}/typing`, devOnly: false, highlight: true },
-                { label: "Suit Multiplayer", icon: Gamepad2, href: `/dashboard/${guildId}/suit`, devOnly: false, highlight: true },
-                { label: "Gacha", icon: Zap, href: `/dashboard/${guildId}/gacha`, devOnly: false, highlight: true },
+                { label: "Gacha Battle", icon: Swords, href: `/dashboard/${guildId}/battle`, devOnly: false },
+                { label: "Blackjack", icon: Coins, href: `/dashboard/${guildId}/blackjack`, devOnly: false },
+                { label: "Slots Machine", icon: Dices, href: `/dashboard/${guildId}/slots`, devOnly: false },
+                { label: "Typing Race", icon: Keyboard, href: `/dashboard/${guildId}/typing`, devOnly: false },
+                { label: "Suit Multiplayer", icon: Gamepad2, href: `/dashboard/${guildId}/suit`, devOnly: false },
+                { label: "Gacha", icon: Zap, href: `/dashboard/${guildId}/gacha`, devOnly: false },
                 { label: "Inventory", icon: Package, href: `/dashboard/${guildId}/inventory`, devOnly: false },
             ]
         },
@@ -140,11 +140,12 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
                 <motion.div
                     whileHover={{ scale: 1.05, rotate: -2 }}
                     whileTap={{ scale: 0.95 }}
+                    className="mb-2"
                 >
                     <Link
                         href={`/dashboard/${guildId}`}
                         className={cn(
-                            "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black uppercase text-xs tracking-widest mb-6 border relative overflow-hidden group hover:rotate-2",
+                            "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black uppercase text-xs tracking-widest border relative overflow-hidden group hover:rotate-2",
                             pathname === `/dashboard/${guildId}`
                                 ? "bg-red-500 text-white border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] rotate-[-2deg]"
                                 : "text-muted-foreground border-white/5 hover:border-red-500/50 hover:text-white"
@@ -158,6 +159,32 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
                             {pathname === `/dashboard/${guildId}` && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full" />}
                         </div>
                         COMMAND CENTER
+                    </Link>
+                </motion.div>
+
+                {/* Gambling Hub - Highlighted below Command Center */}
+                <motion.div
+                    whileHover={{ scale: 1.05, rotate: 2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="mb-6"
+                >
+                    <Link
+                        href={`/dashboard/${guildId}/gambling`}
+                        className={cn(
+                            "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black uppercase text-xs tracking-widest border relative overflow-hidden group hover:-rotate-2",
+                            pathname === `/dashboard/${guildId}/gambling`
+                                ? "bg-red-500 text-white border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] rotate-[2deg]"
+                                : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30 hover:border-amber-500/50 hover:text-white"
+                        )}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                        <div className="relative">
+                            <Gamepad2 size={20} className={cn(pathname === `/dashboard/${guildId}/gambling` ? "text-white" : "text-amber-400")} />
+                        </div>
+                        PUSAT JUDI
+                        <span className="ml-auto text-[7px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-black px-2 py-0.5 rounded-full">
+                            GACOR
+                        </span>
                     </Link>
                 </motion.div>
 
@@ -260,7 +287,7 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
                     </p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 
     return (
