@@ -85,7 +85,7 @@ export const resetUserDataAction = async (userId: string, categories: string[]) 
 
         if (categories.includes("economy")) {
             updateData.bank = 0;
-            updateData.wallet = 100000;
+            updateData.wallet = 10000000;
         }
 
         if (categories.includes("inventory")) {
@@ -133,7 +133,7 @@ export const resetGlobalDataAction = async (categories: string[]) => {
 
         if (categories.includes("economy")) {
             updateData.bank = 0;
-            updateData.wallet = 100000;
+            updateData.wallet = 10000000;
         }
 
         if (categories.includes("inventory")) {

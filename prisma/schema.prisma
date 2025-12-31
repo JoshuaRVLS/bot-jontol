@@ -18,7 +18,7 @@ model User {
   name        String?
   avatar      String?
   bank        Float     @default(0)
-  wallet      Float     @default(100000)
+  wallet      Float     @default(10000000)
   lastDaily   DateTime?
   lastWork    DateTime?
   lastRob     DateTime?
@@ -30,6 +30,8 @@ model User {
   level       Int       @default(1)
   scPity      Int       @default(0)
   gachaConfig Json?
+  lastGachaTime DateTime?
+  gachaStreak   Int       @default(0)
   createdAt   DateTime  @default(now())
   warnings    Warning[]
 }
@@ -99,6 +101,8 @@ model BattleRoom {
   crateCount   Int      @default(1)
   maxPlayers   Int      @default(2)
   isPrivate    Boolean  @default(false)
+  crazyMode    Boolean  @default(false)
+  isTeamMode   Boolean  @default(false)
   status       String   @default("waiting") // waiting, running, finished
   participants Json     @default("[]") // [{id, name, avatar, ready}]
   spectators   Json     @default("[]") // [{id, name}]
@@ -125,6 +129,23 @@ model SuitRoom {
   status       String   @default("waiting") // waiting, running, revealed, finished
   participants Json     @default("[]") // [{id, name, avatar, ready, choice}]
   spectators   Json     @default("[]") // [{id, name}]
+  winnerId     String?
+  isPrivate    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model TypingRoom {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomCode     String   @unique
+  hostId       String
+  hostName     String
+  hostAvatar   String?
+  guildId      String
+  bet          Float    @default(0)
+  targetText   String?
+  status       String   @default("waiting") // waiting, running, finished
+  participants Json     @default("[]") // [{id, name, avatar, ready, progress, wpm}]
   winnerId     String?
   isPrivate    Boolean  @default(false)
   createdAt    DateTime @default(now())

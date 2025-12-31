@@ -8,7 +8,7 @@ import { getSkins } from "@/lib/skins";
 import { revalidatePath } from "next/cache";
 import { addXp } from "@/lib/leveling";
 
-export async function openCaseAction(guildId: string, caseId: CaseType, amount: number = 1) {
+export async function openCaseAction(guildId: string, caseId: CaseType, amount: number = 1, isCrazy: boolean = false) {
     const session: any = await getServerSession(authOptions);
     if (!session) return { error: "Login dulu bang!" };
 
@@ -16,7 +16,7 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
     const config = CASE_CONFIGS[caseId];
 
     if (!config) return { error: "Case gak valid bang!" };
-    if (amount <= 0 || amount > 50) return { error: "Jumlah gacha gak valid (1-50)!" };
+    if (amount <= 0 || amount > 5) return { error: "Jumlah gacha gak valid (1-5)!" };
 
     try {
         const user = await prisma.user.findUnique({
@@ -34,14 +34,27 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
         let currentPity = (user as any).scPity || 0;
         const results = [];
 
+        // Session/Streak Logic
+        const now = new Date();
+        const lastGachaTime = (user as any).lastGachaTime ? new Date((user as any).lastGachaTime) : null;
+        let gachaStreak = (user as any).gachaStreak || 0;
+
+        // Reset streak if last played > 1 hour ago
+        if (!lastGachaTime || (now.getTime() - lastGachaTime.getTime() > 3600000)) {
+            gachaStreak = 0;
+        }
+
+        const initialStreak = gachaStreak;
+
         const guildConfig = await prisma.guildConfig.findUnique({
             where: { guildId }
         });
         const customWeights = guildConfig?.gachaConfig;
 
         for (let i = 0; i < amount; i++) {
-            // Perform Gacha
-            const rawSkin = getWeightedSkin(skinsCache || [], caseId, currentPity, customWeights);
+            // Perform Gacha with Streak
+            const effectiveStreak = initialStreak + i;
+            const rawSkin = getWeightedSkin(skinsCache || [], caseId, currentPity, customWeights, effectiveStreak);
             const { float, wear } = getSkinFloat();
             const marketPrice = getSkinPrice(rawSkin.rarity?.name || "Consumer Grade", float);
             const rarity = rawSkin.rarity?.name?.toLowerCase() || "";
@@ -78,7 +91,9 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
             data: {
                 wallet: { decrement: totalCost },
                 scPity: currentPity,
-                inventory: inv
+                inventory: inv,
+                lastGachaTime: now,
+                gachaStreak: initialStreak + amount
             } as any
         });
 
@@ -88,7 +103,7 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
         return {
             success: true,
             skins: results,
-            bestSkin: [...results].sort((a, b) => b.marketPrice - a.marketPrice)[0]
+            bestSkin: [...results].sort((a, b) => isCrazy ? a.marketPrice - b.marketPrice : b.marketPrice - a.marketPrice)[0]
         };
 
     } catch (error) {

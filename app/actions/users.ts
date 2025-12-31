@@ -151,7 +151,7 @@ export const resetUserData = async (
         await prisma.user.update({
             where: { id: userId },
             data: {
-                wallet: 100000,
+                wallet: 10000000,
                 bank: 0,
                 scPity: 0,
                 inventory: {},

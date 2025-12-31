@@ -18,42 +18,7 @@ import {
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 
-const FloatingMeme = ({ emoji, delay }: { emoji: string; delay: number }) => {
-  const [randomValues, setRandomValues] = useState({
-    xInitial: "50%",
-    xAnimate: "50%",
-    duration: 15
-  });
 
-  useEffect(() => {
-    setRandomValues({
-      xInitial: Math.random() * 100 + "%",
-      xAnimate: (Math.random() * 100) + "%",
-      duration: 10 + Math.random() * 10
-    });
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ y: "110vh", x: randomValues.xInitial, opacity: 0 }}
-      animate={{
-        y: "-10vh",
-        opacity: [0, 1, 1, 0],
-        rotate: [0, 360],
-        x: randomValues.xAnimate
-      }}
-      transition={{
-        duration: randomValues.duration,
-        repeat: Infinity,
-        delay,
-        ease: "linear"
-      }}
-      className="fixed pointer-events-none text-4xl sm:text-6xl z-[-1]"
-    >
-      {emoji}
-    </motion.div>
-  );
-};
 
 export default function LandingPage() {
   const { data: session } = useSession();
@@ -100,13 +65,7 @@ export default function LandingPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
       </div>
 
-      {/* Floating Emojis */}
-      <FloatingMeme emoji="💀" delay={0} />
-      <FloatingMeme emoji="🔥" delay={2} />
-      <FloatingMeme emoji="🤡" delay={4} />
-      <FloatingMeme emoji="💰" delay={6} />
-      <FloatingMeme emoji="📉" delay={8} />
-      <FloatingMeme emoji="🎰" delay={10} />
+
 
       {/* Custom Cursor Text */}
       <motion.div

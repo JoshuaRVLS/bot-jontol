@@ -28,6 +28,7 @@ const GachaModal = ({ isOpen, onClose, config, guildId }: GachaModalProps) => {
     const [reel, setReel] = useState<any[]>([]);
     const [isSelling, setIsSelling] = useState(false);
     const [isFastOpen, setIsFastOpen] = useState(false);
+    const [isCrazy, setIsCrazy] = useState(false);
     const [currentAnimIdx, setCurrentAnimIdx] = useState(0);
 
     const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,7 +106,7 @@ const GachaModal = ({ isOpen, onClose, config, guildId }: GachaModalProps) => {
         if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
 
         try {
-            const res = await openCaseAction(guildId, config.id, amount);
+            const res = await openCaseAction(guildId, config.id, amount, isCrazy);
 
             if (res.error) {
                 setErrorMessage(res.error);
@@ -248,6 +249,17 @@ const GachaModal = ({ isOpen, onClose, config, guildId }: GachaModalProps) => {
                                             >
                                                 <Zap size={14} className={isFastOpen ? "fill-amber-500" : ""} />
                                                 <span className="text-[10px] font-black uppercase tracking-widest">Fast Open</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => setIsCrazy(!isCrazy)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${isCrazy
+                                                    ? "bg-red-500/10 border-red-500/50 text-red-500"
+                                                    : "bg-white/5 border-white/10 text-muted-foreground"
+                                                    }`}
+                                            >
+                                                <Zap size={14} className={isCrazy ? "fill-red-500" : ""} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Crazy Mode</span>
                                             </button>
                                         </div>
                                     </div>

@@ -47,11 +47,10 @@ interface BattleLobbyProps {
 }
 
 const CASE_OPTIONS: { id: CaseType; label: string; color: string }[] = [
-    { id: "budget", label: "Budget (5K)", color: "bg-gray-500" },
-    { id: "classic", label: "Classic (25K)", color: "bg-blue-500" },
     { id: "highroller", label: "Standard (100K)", color: "bg-purple-500" },
-    { id: "elite", label: "Premium (500K)", color: "bg-red-500" },
-    { id: "sultan", label: "Sultan (2JT)", color: "bg-amber-500" },
+    { id: "elite", label: "Special (500K)", color: "bg-red-500" },
+    { id: "sultan", label: "Omega (2JT)", color: "bg-amber-500" },
+    { id: "godtier", label: "Divine (5Miliar)", color: "bg-indigo-500" },
 ];
 
 export const BattleLobby = ({
@@ -67,10 +66,12 @@ export const BattleLobby = ({
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [newRoom, setNewRoom] = useState({
-        caseType: "classic" as CaseType,
+        caseType: "highroller" as CaseType,
         crateCount: 1,
         maxPlayers: 2,
-        isPrivate: false
+        isPrivate: false,
+        crazyMode: false,
+        isTeamMode: false
     });
     const { socket, isConnected } = useSocket();
     const router = useRouter();
@@ -115,7 +116,9 @@ export const BattleLobby = ({
             caseType: newRoom.caseType,
             crateCount: newRoom.crateCount,
             maxPlayers: newRoom.maxPlayers,
-            isPrivate: newRoom.isPrivate
+            isPrivate: newRoom.isPrivate,
+            crazyMode: newRoom.crazyMode,
+            isTeamMode: newRoom.isTeamMode
         });
 
         if (res.success && res.room) {
@@ -246,12 +249,18 @@ export const BattleLobby = ({
                 {rooms.length === 0 && (
                     <div className="col-span-full text-center py-16 space-y-4">
                         <div className="w-20 h-20 mx-auto rounded-full bg-white/5 flex items-center justify-center">
-                            <Swords size={40} className="text-muted-foreground" />
+                            <Swords size={40} className="text-red-500 drop-shadow-glow" />
                         </div>
-                        <div>
-                            <h4 className="font-black uppercase italic text-lg text-primary animate-pulse">BELUM ADA RUANGAN</h4>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-2 opacity-50">Jadilah yang pertama untuk memulai pertempuran!</p>
+                        <div className="space-y-2">
+                            <h4 className="font-black uppercase italic text-3xl text-white tracking-tighter">ARENA KOSONG</h4>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-50">Belum ada tumbal yang siap bertarung...</p>
                         </div>
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="mt-6 px-8 py-3 rounded-2xl bg-white/5 border border-white/10 font-black uppercase text-xs hover:bg-white/10 transition-all hover:scale-105"
+                        >
+                            TANTANG SEKARANG
+                        </button>
                     </div>
                 )}
             </div>
@@ -371,6 +380,65 @@ export const BattleLobby = ({
                                         <div className={cn(
                                             "w-4 h-4 rounded-full bg-white transition-all",
                                             newRoom.isPrivate ? "translate-x-4" : "translate-x-0"
+                                        )} />
+                                    </div>
+                                </button>
+
+                                {/* Team Mode Toggle */}
+                                <button
+                                    onClick={() => {
+                                        const nextVal = !newRoom.isTeamMode;
+                                        setNewRoom(prev => ({
+                                            ...prev,
+                                            isTeamMode: nextVal,
+                                            maxPlayers: nextVal ? 4 : prev.maxPlayers
+                                        }));
+                                    }}
+                                    className={cn(
+                                        "w-full p-4 rounded-xl border flex items-center justify-between transition-all",
+                                        newRoom.isTeamMode ? "border-blue-500 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.2)]" : "border-white/10 bg-white/5"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Users size={18} className={newRoom.isTeamMode ? "text-blue-500" : "text-muted-foreground"} />
+                                        <div className="text-left">
+                                            <span className="font-bold text-sm block">Team Mode (2vs2)</span>
+                                            <span className="text-[8px] font-bold text-muted-foreground uppercase text-blue-400">Battle CT vs T (Max 4 Players)</span>
+                                        </div>
+                                    </div>
+                                    <div className={cn(
+                                        "w-10 h-6 rounded-full p-1 transition-all",
+                                        newRoom.isTeamMode ? "bg-blue-500" : "bg-white/20"
+                                    )}>
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full bg-white transition-all",
+                                            newRoom.isTeamMode ? "translate-x-4" : "translate-x-0"
+                                        )} />
+                                    </div>
+                                </button>
+
+                                {/* Crazy Mode Toggle */}
+                                <button
+                                    onClick={() => setNewRoom(prev => ({ ...prev, crazyMode: !prev.crazyMode }))}
+                                    className={cn(
+                                        "w-full p-4 rounded-xl border flex items-center justify-between transition-all",
+                                        newRoom.crazyMode ? "border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.2)]" : "border-white/10 bg-white/5"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Zap size={18} className={newRoom.crazyMode ? "text-red-500 fill-red-500" : "text-muted-foreground"} />
+                                        <div className="text-left">
+                                            <span className="font-bold text-sm block">Crazy Mode</span>
+                                            <span className="text-[8px] font-bold text-muted-foreground uppercase text-red-400">Yang paling miskin/murah yang menang!</span>
+                                        </div>
+                                    </div>
+                                    <div className={cn(
+                                        "w-10 h-6 rounded-full p-1 transition-all",
+                                        newRoom.crazyMode ? "bg-red-500" : "bg-white/20"
+                                    )}>
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full bg-white transition-all",
+                                            newRoom.crazyMode ? "translate-x-4" : "translate-x-0"
                                         )} />
                                     </div>
                                 </button>

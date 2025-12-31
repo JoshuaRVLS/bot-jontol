@@ -26,7 +26,9 @@ import {
     Users,
     MousePointer2,
     RotateCcw,
-    Trophy
+    Trophy,
+    Dices,
+    Keyboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,6 +85,8 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
             items: [
                 { label: "Gacha Battle", icon: Swords, href: `/dashboard/${guildId}/battle`, devOnly: false, highlight: true },
                 { label: "Blackjack", icon: Coins, href: `/dashboard/${guildId}/blackjack`, devOnly: false, highlight: true },
+                { label: "Slots Machine", icon: Dices, href: `/dashboard/${guildId}/slots`, devOnly: false, highlight: true },
+                { label: "Typing Race", icon: Keyboard, href: `/dashboard/${guildId}/typing`, devOnly: false, highlight: true },
                 { label: "Suit Multiplayer", icon: Gamepad2, href: `/dashboard/${guildId}/suit`, devOnly: false, highlight: true },
                 { label: "Gacha", icon: Zap, href: `/dashboard/${guildId}/gacha`, devOnly: false, highlight: true },
                 { label: "Inventory", icon: Package, href: `/dashboard/${guildId}/inventory`, devOnly: false },
@@ -150,8 +154,8 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                         )}
                         <div className="relative">
-                            <LayoutDashboard size={20} className={cn(pathname === `/dashboard/${guildId}` && "animate-bounce")} />
-                            {pathname === `/dashboard/${guildId}` && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping" />}
+                            <LayoutDashboard size={20} className={cn(pathname === `/dashboard/${guildId}` && "text-white")} />
+                            {pathname === `/dashboard/${guildId}` && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full" />}
                         </div>
                         COMMAND CENTER
                     </Link>
@@ -228,7 +232,7 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
                                                             <item.icon size={18} className={cn(isActive && "animate-pulse", isHighlight && "text-amber-400")} />
                                                             {item.label}
                                                             {isHighlight && (
-                                                                <span className="ml-auto text-[7px] font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-orange-500 text-black px-2 py-0.5 rounded-full animate-bounce">
+                                                                <span className="ml-auto text-[7px] font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-orange-500 text-black px-2 py-0.5 rounded-full">
                                                                     GACOR
                                                                 </span>
                                                             )}
@@ -264,7 +268,7 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
             {/* Mobile Header Toggle */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-40 p-4 flex items-center justify-between bg-background/80 backdrop-blur-xl border-b border-white/5">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-black text-xs animate-spin-slow">J</div>
+                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-black text-xs">J</div>
                     <span className="font-black italic uppercase tracking-tighter">HABITAT JONTOL</span>
                 </div>
                 <button

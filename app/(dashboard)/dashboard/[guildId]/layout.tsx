@@ -1,5 +1,4 @@
 import { Sidebar } from "@/components/Sidebar";
-import { TrollChaos } from "@/components/TrollChaos";
 import { checkIsDeveloper } from "@/app/actions/developer";
 import WelcomeGuideModal from "@/components/WelcomeGuideModal";
 
@@ -16,7 +15,6 @@ export default async function GuildLayout({
     return (
         <div className="flex bg-background min-h-screen relative overflow-hidden">
             <WelcomeGuideModal />
-            <TrollChaos />
             <Sidebar guildId={guildId} isDeveloper={isDeveloper} />
             <main className="flex-1 p-4 md:p-8 pt-24 lg:pt-8 overflow-y-auto relative z-10">
                 <div className="max-w-6xl mx-auto">

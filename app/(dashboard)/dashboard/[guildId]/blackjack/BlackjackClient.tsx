@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Coins, Swords, RefreshCw, Trophy, AlertTriangle, User as UserIcon, Shield, Zap, Info, HandIcon, Plus, Minus, Check, Play } from "lucide-react";
-import { startBJAction, hitBJAction, standBJAction, doubleBJAction, BlackjackState, Card, Suit, Rank } from "@/app/actions/blackjack";
+import { startBJAction, hitBJAction, standBJAction, doubleBJAction, surrenderBJAction, BlackjackState, Card, Suit, Rank } from "@/app/actions/blackjack";
 import { formatRupiah, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -139,6 +139,20 @@ export default function BlackjackClient({ guildId, initialWallet }: BlackjackCli
             } else if (result.state.status === "push") {
                 setWallet(prev => prev + result.state.bet);
             }
+        }
+    };
+
+    const handleSurrender = async () => {
+        if (!gameState || gameState.status !== "playing") return;
+        setLoading(true);
+        const result = await surrenderBJAction();
+        setLoading(false);
+
+        if (result.error) toast(result.error, "error");
+        else if (result.state) {
+            setGameState(result.state);
+            // Refund half
+            setWallet(prev => prev + Math.floor(result.state!.bet / 2));
         }
     };
 
@@ -328,26 +342,37 @@ export default function BlackjackClient({ guildId, initialWallet }: BlackjackCli
                                         <button
                                             onClick={handleHit}
                                             disabled={loading}
-                                            className="flex-1 h-20 bg-white/10 hover:bg-white/20 text-white rounded-3xl flex items-center justify-center gap-3 font-black uppercase tracking-widest transition-all border border-white/10"
+                                            className="flex-1 h-20 bg-white/10 hover:bg-white/20 text-white rounded-3xl flex items-center justify-center gap-2 sm:gap-3 font-black uppercase tracking-widest transition-all border border-white/10 text-xs sm:text-base relative group overflow-hidden"
                                         >
+                                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                             <Zap size={20} className="text-emerald-400" />
                                             Hit
                                         </button>
                                         <button
                                             onClick={handleDouble}
                                             disabled={loading || wallet < gameState.bet}
-                                            className="flex-1 h-20 bg-amber-500 hover:bg-amber-600 text-black rounded-3xl flex items-center justify-center gap-3 font-black uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(245,158,11,0.3)] disabled:opacity-50"
+                                            className="flex-1 h-20 bg-amber-500 hover:bg-amber-600 text-black rounded-3xl flex items-center justify-center gap-2 sm:gap-3 font-black uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(245,158,11,0.3)] disabled:opacity-50 text-xs sm:text-base relative group overflow-hidden"
                                         >
+                                            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                             <Plus size={20} />
                                             Double
                                         </button>
                                         <button
                                             onClick={handleStand}
                                             disabled={loading}
-                                            className="flex-1 h-20 bg-primary hover:bg-blue-600 text-white rounded-3xl flex items-center justify-center gap-3 font-black uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(59,130,246,0.3)]"
+                                            className="flex-1 h-20 bg-primary hover:bg-blue-600 text-white rounded-3xl flex items-center justify-center gap-2 sm:gap-3 font-black uppercase tracking-widest transition-all shadow-[0_10px_30px_rgba(59,130,246,0.3)] text-xs sm:text-base relative group overflow-hidden"
                                         >
+                                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                             <HandIcon size={20} />
                                             Stand
+                                        </button>
+                                        <button
+                                            onClick={handleSurrender}
+                                            disabled={loading}
+                                            className="w-20 sm:w-24 h-20 bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 border border-rose-500/30 rounded-3xl flex flex-col items-center justify-center gap-1 font-bold uppercase tracking-widest transition-all text-[10px] sm:text-xs"
+                                        >
+                                            <AlertTriangle size={16} />
+                                            Give Up
                                         </button>
                                     </>
                                 ) : (

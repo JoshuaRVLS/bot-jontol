@@ -27,7 +27,7 @@ export const GachaConfigEditor = ({ guildId, initialConfig }: GachaConfigEditorP
     const [config, setConfig] = useState<any>(initialConfig || {});
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
-    const [activeCase, setActiveCase] = useState<CaseType>("classic");
+    const [activeCase, setActiveCase] = useState<CaseType>("highroller");
 
     useEffect(() => {
         // Initialize with default weights if missing

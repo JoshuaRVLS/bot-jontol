@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocket } from "@/components/SocketProvider";
-import { executeBattleAction, startBattleAction } from "@/app/actions/battle";
+import { executeBattleAction, startBattleAction, leaveBattleRoomAction } from "@/app/actions/battle";
 import { CASE_CONFIGS, CaseType } from "@/lib/csgo";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
@@ -57,6 +57,8 @@ interface BattleRoom {
     crateCount: number;
     maxPlayers: number;
     isPrivate: boolean;
+    crazyMode: boolean;
+    isTeamMode: boolean;
     status: string;
     participants: Participant[];
     results?: BattleResult[];
@@ -140,6 +142,24 @@ const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRo
     );
 };
 
+const RoundIndicator = ({ current, total }: { current: number, total: number }) => {
+    return (
+        <div className="flex gap-1.5">
+            {Array.from({ length: total }).map((_, i) => (
+                <div
+                    key={i}
+                    className={cn(
+                        "h-1 rounded-full transition-all duration-500",
+                        i < current ? "w-4 bg-emerald-500" :
+                            i === current ? "w-8 bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]" :
+                                "w-2 bg-white/10"
+                    )}
+                />
+            ))}
+        </div>
+    );
+};
+
 export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: BattleRoomViewProps) => {
     const [room, setRoom] = useState<BattleRoom>(initialRoom);
     const [isStarting, setIsStarting] = useState(false);
@@ -185,7 +205,20 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
             ...prev,
             status: "finished",
             results: results,
-            winnerId: results.reduce((max, r) => r.totalValue > max.totalValue ? r : max).participantId
+            winnerId: (() => {
+                if (prev.isTeamMode && results.length === 4) {
+                    const t1Val = results[0].totalValue + results[2].totalValue;
+                    const t2Val = results[1].totalValue + results[3].totalValue;
+                    const t1Wins = prev.crazyMode ? t1Val < t2Val : t1Val > t2Val;
+                    return t1Wins ? results[0].participantId : results[1].participantId;
+                }
+                return results.reduce((best, r) => {
+                    if (prev.crazyMode) {
+                        return r.totalValue < best.totalValue ? r : best;
+                    }
+                    return r.totalValue > best.totalValue ? r : best;
+                }).participantId;
+            })()
         }));
     };
 
@@ -196,6 +229,10 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
         socket.emit("spectate_room", { roomId: room.id, userId: currentUser.id, userName: currentUser.name });
 
         socket.on("room_update", (updatedRoom: BattleRoom) => {
+            if (updatedRoom.status === "removed") {
+                router.push(`/dashboard/${guildId}/battle`);
+                return;
+            }
             setRoom(updatedRoom);
         });
 
@@ -263,13 +300,22 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
         }
     };
 
-    const handleLeave = () => {
-        if (socket && isParticipant) {
-            socket.emit("update_room", {
-                roomId: room.id,
-                room: { ...room, participants: room.participants.filter(p => p.id !== currentUser.id) }
-            });
-            socket.emit("battle_room_updated", { ...room, participants: room.participants.filter(p => p.id !== currentUser.id) });
+    const handleLeave = async () => {
+        const res = await leaveBattleRoomAction(room.id);
+        if (res.success) {
+            if (res.action === "removed") {
+                socket?.emit("battle_room_removed", room.id);
+                socket?.emit("update_room", {
+                    roomId: room.id,
+                    room: { ...room, status: "removed" } // This helps client side handling
+                });
+            } else if (res.action === "updated" && res.room) {
+                socket?.emit("update_room", {
+                    roomId: room.id,
+                    room: res.room
+                });
+                socket?.emit("battle_room_updated", res.room);
+            }
         }
         router.push(`/dashboard/${guildId}/battle`);
     };
@@ -306,6 +352,12 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                     >
                         {isCopied ? <CheckCheck size={16} className="text-emerald-400 sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
                     </button>
+                    {room.crazyMode && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[8px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse">
+                            <Zap size={10} className="fill-red-500" />
+                            CRAZY MODE
+                        </div>
+                    )}
                     <div className={cn(
                         "px-3 sm:px-6 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[8px] sm:text-[10px] font-black uppercase tracking-tighter shadow-lg shadow-black/40",
                         room.status === "waiting" ? "bg-amber-500/20 text-amber-500 border border-amber-500/20" :
@@ -329,11 +381,14 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                             <div className="absolute top-0 left-0 h-full bg-red-500/10 transition-all duration-500" style={{ width: `${progress}%` }} />
                             <div className="flex items-center justify-between px-4 relative z-10">
                                 <span className="text-[10px] font-black uppercase text-red-500 italic flex items-center gap-2">
-                                    <Zap size={12} className="animate-pulse" /> PROSES PEMBERSIHAN DOYA
+                                    <Zap size={12} className="animate-pulse" /> {room.crazyMode ? "CRAZY MODE ACTIVATED" : "PROSES PEMBERSIHAN DOYA"}
                                 </span>
-                                <span className="text-[10px] font-black uppercase text-muted-foreground">
-                                    Ronde {currentRound + 1} / {room.crateCount}
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    <RoundIndicator current={currentRound} total={room.crateCount} />
+                                    <span className="text-[10px] font-black uppercase text-muted-foreground ml-2">
+                                        Ronde {currentRound + 1} / {room.crateCount}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -341,13 +396,17 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                     {/* Participants Row/Container */}
                     <div className={cn(
                         "grid gap-4",
-                        room.status === "waiting" ? "grid-cols-2 md:grid-cols-4" : "grid-cols-1"
+                        room.status === "waiting" ? (room.isTeamMode ? "grid-cols-2" : "grid-cols-2 md:grid-cols-4") : "grid-cols-1"
                     )}>
                         {Array.from({ length: room.maxPlayers }).map((_, idx) => {
                             const p = room.participants[idx];
                             const pResults = battleResults?.find(r => r.participantId === p?.id);
                             const currentTotal = pResults?.skins.slice(0, currentRound + (isRollingRound ? 0 : 1)).reduce((sum, s) => sum + s.marketPrice, 0) || 0;
                             const isWinner = room.status === "finished" && p?.id === room.winnerId;
+
+                            // Team Assignment
+                            const isTeamCT = room.isTeamMode && (idx === 0 || idx === 2);
+                            const isTeamT = room.isTeamMode && (idx === 1 || idx === 3);
 
                             // In Battle View, we show each player in a row with their rolls
                             if (room.status !== "waiting" && p) {
@@ -357,12 +416,23 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                                         layout
                                         className={cn(
                                             "glass-card rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 items-center relative overflow-hidden transition-all duration-700",
-                                            isWinner ? "border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)] sm:shadow-[0_0_40px_rgba(245,158,11,0.2)]" : "border-white/5"
+                                            isWinner ? "border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)] sm:shadow-[0_0_40px_rgba(245,158,11,0.2)]" : "border-white/5",
+                                            isTeamCT ? "bg-blue-500/5 border-blue-500/20" : isTeamT ? "bg-amber-500/5 border-amber-500/20" : ""
                                         )}
                                     >
                                         {isWinner && (
                                             <div className="absolute top-0 right-0 p-4">
                                                 <Crown className="text-amber-500 drop-shadow-glow" size={32} />
+                                            </div>
+                                        )}
+
+                                        {/* Team Badge */}
+                                        {room.isTeamMode && (
+                                            <div className={cn(
+                                                "absolute top-4 left-4 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest",
+                                                isTeamCT ? "bg-blue-500 text-white" : "bg-amber-600 text-white"
+                                            )}>
+                                                {isTeamCT ? "CT TEAM" : "T TEAM"}
                                             </div>
                                         )}
 
@@ -379,8 +449,14 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                                                 </div>
                                             </div>
                                             <div>
-                                                <h4 className="font-black uppercase text-[10px] sm:text-sm italic line-clamp-1">{p.name}</h4>
-                                                <p className="text-lg sm:text-xl font-black text-white mt-0.5 sm:mt-1">{formatRupiah(currentTotal)}</p>
+                                                <h4 className="font-black uppercase text-[10px] sm:text-sm italic line-clamp-1 flex items-center gap-2">
+                                                    {p.name}
+                                                    {isWinner && <Crown size={12} className="text-amber-500 animate-bounce" />}
+                                                </h4>
+                                                <p className={cn(
+                                                    "text-lg sm:text-xl font-black mt-0.5 sm:mt-1",
+                                                    isWinner ? "text-amber-500" : "text-white"
+                                                )}>{formatRupiah(currentTotal)}</p>
                                                 <p className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest">HASIL NYOPET</p>
                                             </div>
                                         </div>
@@ -433,8 +509,18 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                             return (
                                 <motion.div key={idx} className={cn(
                                     "glass-card rounded-3xl p-6 border-white/5 text-center flex flex-col items-center gap-4 transition-all hover:scale-[1.02]",
-                                    p ? "bg-white/5" : "bg-transparent border-dashed border-2 border-white/10"
+                                    p ? "bg-white/5" : "bg-transparent border-dashed border-2 border-white/10",
+                                    isTeamCT ? "border-blue-500/40 bg-blue-500/5 focus:ring-2 ring-blue-500/20" :
+                                        isTeamT ? "border-amber-500/40 bg-amber-500/5 focus:ring-2 ring-amber-500/20" : ""
                                 )}>
+                                    {room.isTeamMode && (
+                                        <div className={cn(
+                                            "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
+                                            isTeamCT ? "bg-blue-500 text-white" : "bg-amber-600 text-white"
+                                        )}>
+                                            {isTeamCT ? "Counter-Terrorists" : "Terrorists"}
+                                        </div>
+                                    )}
                                     {p ? (
                                         <>
                                             <div className="relative">

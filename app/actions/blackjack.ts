@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { randomInt } from "crypto";
 
 export type Suit = "hearts" | "diamonds" | "clubs" | "spades";
 export type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K";
@@ -55,10 +56,12 @@ const createDeck = (): Card[] => {
         }
     }
 
-    // Shuffle
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
+    // Secure Shuffle 3x
+    for (let s = 0; s < 3; s++) {
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = randomInt(0, i + 1);
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
     }
 
     return deck;
@@ -95,6 +98,9 @@ export const startBJAction = async (bet: number) => {
         });
 
         const deck = createDeck();
+        // Burn one card
+        deck.pop();
+
         const playerHand = [deck.pop()!, deck.pop()!];
         const dealerHand = [deck.pop()!, deck.pop()!];
 
@@ -247,4 +253,27 @@ export const doubleBJAction = async () => {
 
     // Then stand automatically
     return standBJAction();
+};
+
+export const surrenderBJAction = async () => {
+    const session: any = await getServerSession(authOptions);
+    if (!session) return { error: "Login dulu bang!" };
+
+    const userId = session.user.id;
+    const game = activeGames.get(userId);
+
+    if (!game || game.status !== "playing") return { error: "Gak ada game aktif bang!" };
+
+    // Refund half bet
+    const refund = Math.floor(game.bet / 2);
+    await prisma.user.update({
+        where: { id: userId },
+        data: { wallet: { increment: refund } }
+    });
+
+    game.status = "lose"; // Technincally a loss but saved half
+    game.message = `Surrender. Lu nyerah dan dapet balik Rp ${refund.toLocaleString("id-ID")}.`;
+
+    activeGames.delete(userId);
+    return { success: true, state: { ...game, deck: [] } };
 };
