@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { CaseType, CASE_CONFIGS, getWeightedSkin, getSkinFloat, getSkinPrice } from "@/lib/csgo";
 import { getSkins } from "@/lib/skins";
 import { revalidatePath } from "next/cache";
+import { addXp } from "@/lib/leveling";
 
 export async function openCaseAction(guildId: string, caseId: CaseType, amount: number = 1) {
     const session: any = await getServerSession(authOptions);
@@ -80,6 +81,9 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
                 inventory: inv
             } as any
         });
+
+        // Add XP: 100 per case
+        await addXp(userId, amount * 100);
 
         return {
             success: true,

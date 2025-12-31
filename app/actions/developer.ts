@@ -72,3 +72,98 @@ export const removeDeveloper = async (userId: string) => {
         return { error: "Gagal hapus developer!" };
     }
 };
+
+export const resetUserDataAction = async (userId: string, categories: string[]) => {
+    const session: any = await getServerSession(authOptions);
+    if (!session) return { error: "Login dulu bang!" };
+
+    const isDev = await checkIsDeveloper();
+    if (!isDev) return { error: "Bukan developer!" };
+
+    try {
+        const updateData: any = {};
+
+        if (categories.includes("economy")) {
+            updateData.bank = 0;
+            updateData.wallet = 100000;
+        }
+
+        if (categories.includes("inventory")) {
+            updateData.inventory = {};
+        }
+
+        if (categories.includes("leveling")) {
+            updateData.xp = 0;
+            updateData.level = 1;
+        }
+
+        if (categories.includes("investments")) {
+            updateData.investments = {};
+        }
+
+        if (categories.includes("pity")) {
+            updateData.scPity = 0;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return { error: "Pilih kategori datanya dulu bang!" };
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: updateData
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("[Reset Data Error]", error);
+        return { error: "Gagal reset data bang!" };
+    }
+};
+
+export const resetGlobalDataAction = async (categories: string[]) => {
+    const session: any = await getServerSession(authOptions);
+    if (!session) return { error: "Login dulu bang!" };
+
+    const isDev = await checkIsDeveloper();
+    if (!isDev) return { error: "Bukan developer!" };
+
+    try {
+        const updateData: any = {};
+
+        if (categories.includes("economy")) {
+            updateData.bank = 0;
+            updateData.wallet = 100000;
+        }
+
+        if (categories.includes("inventory")) {
+            updateData.inventory = {};
+        }
+
+        if (categories.includes("leveling")) {
+            updateData.xp = 0;
+            updateData.level = 1;
+        }
+
+        if (categories.includes("investments")) {
+            updateData.investments = {};
+        }
+
+        if (categories.includes("pity")) {
+            updateData.scPity = 0;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return { error: "Pilih kategori datanya dulu bang!" };
+        }
+
+        await prisma.user.updateMany({
+            data: updateData
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("[Reset Global Data Error]", error);
+        return { error: "Gagal reset data global bang!" };
+    }
+};

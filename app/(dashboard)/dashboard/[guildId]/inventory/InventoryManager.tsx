@@ -16,8 +16,8 @@ export default function InventoryManager({ skins, items, userId }: InventoryMana
     const [activeTab, setActiveTab] = useState<"skins" | "items">("skins");
 
     const tabs = [
-        { id: "skins", label: "Skin Koleksi", icon: Sparkles, count: skins.length },
-        { id: "items", label: "Barang Tas", icon: Briefcase, count: Object.keys(items).filter(k => k !== "csSkins").length },
+        { id: "skins", label: "KOLEKSI SKIN GACOR", icon: Sparkles, count: skins.length },
+        { id: "items", label: "KANTUNG AJAIB (ITEMS)", icon: Briefcase, count: Object.keys(items).filter(k => k !== "csSkins").length },
     ];
 
     return (

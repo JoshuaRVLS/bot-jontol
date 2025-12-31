@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getWeightedSkin, getSkinFloat, getSkinPrice, CASE_CONFIGS, CaseType } from "@/lib/csgo";
 import { getSkins } from "@/lib/skins";
+import { addXp } from "@/lib/leveling";
 
 export async function getBattleRoomsAction(guildId: string) {
     try {
@@ -98,6 +99,11 @@ export async function executeBattleAction(roomId: string) {
             });
         }
 
+        // Add XP to all participants
+        for (const p of participants) {
+            await addXp(p.id, 500);
+        }
+
         await prisma.battleRoom.update({
             where: { id: roomId },
             data: {
@@ -151,5 +157,27 @@ export async function createBattleRoomAction(data: {
     } catch (error) {
         console.error("[Battle Create] Error:", error);
         return { success: false, error: "Gagal bikin room." };
+    }
+}
+
+export async function startBattleAction(roomId: string) {
+    const session: any = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "Login dulu bang!" };
+
+    try {
+        const room = await prisma.battleRoom.findUnique({ where: { id: roomId } });
+        if (!room) return { success: false, error: "Room gak ketemu!" };
+        if (room.hostId !== session.user.id) return { success: false, error: "Cuma host yang bisa mulai!" };
+        if (room.status !== "waiting") return { success: false, error: "Battle udah jalan/selesai!" };
+
+        const updatedRoom = await prisma.battleRoom.update({
+            where: { id: roomId },
+            data: { status: "running" }
+        });
+
+        revalidatePath("/dashboard/[guildId]/battle", "page");
+        return { success: true, room: updatedRoom };
+    } catch (error) {
+        return { success: false, error: "Gagal mulai battle." };
     }
 }

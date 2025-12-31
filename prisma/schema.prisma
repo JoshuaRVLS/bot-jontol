@@ -113,3 +113,20 @@ model Developer {
   name      String?
   addedAt   DateTime @default(now())
 }
+
+model SuitRoom {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomCode     String   @unique
+  hostId       String
+  hostName     String
+  hostAvatar   String?
+  guildId      String
+  bet          Float    @default(0)
+  status       String   @default("waiting") // waiting, running, revealed, finished
+  participants Json     @default("[]") // [{id, name, avatar, ready, choice}]
+  spectators   Json     @default("[]") // [{id, name}]
+  winnerId     String?
+  isPrivate    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}

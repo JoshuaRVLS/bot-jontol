@@ -15,18 +15,21 @@ const CaseCard = ({ config, guildId }: CaseCardProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const colors: Record<string, string> = {
-        budget: "from-slate-500 to-slate-800 border-slate-500/20 shadow-slate-500/10",
-        classic: "from-blue-500 to-blue-900 border-blue-500/20 shadow-blue-500/10",
-        highroller: "from-purple-500 to-purple-900 border-purple-500/30 shadow-purple-500/10",
-        elite: "from-red-600 to-red-950 border-red-500/40 shadow-red-500/20",
-        sultan: "from-amber-400 to-amber-900 border-amber-400/50 shadow-amber-400/30",
+        budget: "from-slate-500 via-slate-700 to-black border-slate-500/20 shadow-slate-500/10",
+        classic: "from-blue-500 via-indigo-600 to-black border-blue-500/20 shadow-blue-500/10",
+        highroller: "from-purple-500 via-pink-600 to-black border-purple-500/30 shadow-purple-500/10",
+        elite: "from-red-600 via-rose-700 to-black border-red-500/40 shadow-red-500/20",
+        sultan: "from-amber-400 via-orange-500 to-black border-amber-400/50 shadow-amber-400/30",
     };
 
     const gradientClass = colors[config.id] || colors.classic;
 
     return (
         <>
-            <div className="glass-card group p-1 rounded-[32px] transition-all duration-500 hover:scale-[1.02] hover:-translate-y-2 relative overflow-hidden flex flex-col h-full border-white/5 hover:border-white/10 shadow-2xl">
+            <div
+                style={{ rotate: `${(Math.random() * 4 - 2)}deg` }}
+                className="glass-card group p-1 rounded-[48px] transition-all duration-500 hover:scale-[1.05] hover:rotate-0 relative overflow-hidden flex flex-col h-full border-white/5 hover:border-red-500/30 shadow-2xl"
+            >
                 <div className={`h-48 rounded-[28px] bg-gradient-to-br ${gradientClass} flex items-center justify-center p-6 relative overflow-hidden`}>
                     <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
 
@@ -62,11 +65,11 @@ const CaseCard = ({ config, guildId }: CaseCardProps) => {
 
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="mt-auto w-full py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-primary hover:border-primary hover:text-white text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 group/btn relative overflow-hidden active:scale-95"
+                        className="mt-auto w-full py-5 rounded-[28px] bg-red-500 text-white text-xs font-black uppercase tracking-[0.3em] shadow-[0_15px_30px_rgba(239,68,68,0.3)] hover:bg-red-400 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden active:scale-95"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/5 to-primary/0 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
-                        <ShoppingCart size={14} className="group-hover/btn:scale-110 transition-transform" />
-                        Buka Case
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
+                        <ShoppingCart size={16} className="group-hover/btn:rotate-12 transition-transform" />
+                        GASKEUN BANG!
                     </button>
                 </div>
             </div>

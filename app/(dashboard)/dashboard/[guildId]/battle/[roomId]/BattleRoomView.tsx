@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
     Swords,
     Crown,
     Users,
     Check,
-    X,
     Play,
     Trophy,
     Eye,
@@ -15,13 +14,16 @@ import {
     Loader2,
     Copy,
     CheckCheck,
-    Zap
+    Zap,
+    History,
+    Dices
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocket } from "@/components/SocketProvider";
-import { executeBattleAction } from "@/app/actions/battle";
+import { executeBattleAction, startBattleAction } from "@/app/actions/battle";
 import { CASE_CONFIGS, CaseType } from "@/lib/csgo";
 import { cn } from "@/lib/utils";
+import { formatRupiah } from "@/lib/format";
 
 interface Participant {
     id: string;
@@ -30,10 +32,19 @@ interface Participant {
     ready: boolean;
 }
 
+interface Skin {
+    instanceId: string;
+    name: string;
+    image: string;
+    marketPrice: number;
+    rarity: { name: string; color: string };
+    wear?: string;
+}
+
 interface BattleResult {
     participantId: string;
     participantName: string;
-    skins: any[];
+    skins: Skin[];
     totalValue: number;
 }
 
@@ -48,7 +59,6 @@ interface BattleRoom {
     isPrivate: boolean;
     status: string;
     participants: Participant[];
-    spectators: { id: string; name: string }[];
     results?: BattleResult[];
     winnerId?: string;
 }
@@ -64,20 +74,91 @@ interface BattleRoomViewProps {
     };
 }
 
+// Carousel Component for single opening
+const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRolling: boolean, roundIndex: number }) => {
+    if (!skin && !isRolling) return (
+        <div className="w-full aspect-square bg-white/5 rounded-2xl border border-dashed border-white/10 flex items-center justify-center">
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest leading-none text-center px-1">Round {roundIndex + 1}</span>
+        </div>
+    );
+
+    return (
+        <div className="relative w-full aspect-square glass-card rounded-2xl border-white/5 overflow-hidden flex flex-col items-center justify-center p-2 sm:p-4">
+            <AnimatePresence mode="wait">
+                {isRolling ? (
+                    <motion.div
+                        key="rolling"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center gap-1 sm:gap-3"
+                    >
+                        <motion.div
+                            animate={{
+                                rotateY: [0, 360],
+                                scale: [1, 1.1, 1]
+                            }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                            <Dices size={30} className="text-white/20 sm:w-10 sm:h-10" />
+                        </motion.div>
+                        <span className="text-[7px] sm:text-[8px] font-black text-muted-foreground uppercase animate-pulse">Rolling...</span>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="reveal"
+                        initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                        className="flex flex-col items-center text-center w-full h-full justify-between"
+                    >
+                        <div className="relative w-full h-2/3 flex items-center justify-center">
+                            <motion.img
+                                src={skin!.image}
+                                alt=""
+                                className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+                                animate={{ y: [0, -3, 0] }}
+                                transition={{ duration: 3, repeat: Infinity }}
+                            />
+                            <div className="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none" />
+                        </div>
+                        <div className="mt-1 sm:mt-2 w-full">
+                            <p className="text-[8px] sm:text-[10px] font-black leading-tight line-clamp-2 uppercase whitespace-normal h-5 sm:h-6 flex items-center justify-center px-0.5 sm:px-1">
+                                {skin!.name}
+                            </p>
+                            <p className="text-[8px] sm:text-[10px] font-bold text-emerald-400 mt-0.5 sm:mt-1">
+                                {formatRupiah(skin!.marketPrice)}
+                            </p>
+                        </div>
+                        <div
+                            className="absolute bottom-0 left-0 w-full h-0.5 sm:h-1"
+                            style={{ backgroundColor: skin!.rarity?.color || "#5865f2" }}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: BattleRoomViewProps) => {
     const [room, setRoom] = useState<BattleRoom>(initialRoom);
     const [isStarting, setIsStarting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
-    const [animationPhase, setAnimationPhase] = useState<"idle" | "rolling" | "reveal" | "winner">("idle");
-    const [currentRollIndex, setCurrentRollIndex] = useState(0);
+
+    // Animation State
+    const [battleResults, setBattleResults] = useState<BattleResult[] | null>(null);
+    const [lockedWinnerId, setLockedWinnerId] = useState<string | null>(null);
+    const [currentRound, setCurrentRound] = useState(-1); // -1: lobby, 0+: rolling
+    const [isRollingRound, setIsRollingRound] = useState(false);
+
     const { socket, isConnected } = useSocket();
     const router = useRouter();
 
     const isHost = currentUser.id === room.hostId;
     const isParticipant = room.participants.some(p => p.id === currentUser.id);
-    const isSpectator = !isParticipant;
     const caseConfig = CASE_CONFIGS[room.caseType as CaseType];
 
+    // Initialize/Sync
     useEffect(() => {
         if (!socket) return;
 
@@ -87,61 +168,101 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
             setRoom(updatedRoom);
         });
 
-        socket.on("battle_start", async () => {
-            setAnimationPhase("rolling");
-            const res = await executeBattleAction(room.id);
-            if (res.success) {
-                setRoom(prev => ({
-                    ...prev,
-                    status: "finished",
-                    results: res.results,
-                    winnerId: res.winnerId
-                }));
-
-                for (let i = 0; i < (res.results?.length || 0); i++) {
-                    await new Promise(r => setTimeout(r, 3000));
-                    setCurrentRollIndex(i + 1);
-                }
-                setAnimationPhase("winner");
-            }
+        socket.on("battle_start", () => {
+            setRoom(prev => ({ ...prev, status: "running" }));
+            handleHostExecution();
         });
 
-        socket.on("battle_finished", (updatedRoom: BattleRoom) => {
-            setRoom(updatedRoom);
-            setAnimationPhase("winner");
+        socket.on("battle_results", (data: { results: BattleResult[], winnerId: string }) => {
+            setBattleResults(data.results);
+            setLockedWinnerId(data.winnerId);
+            startAnimationSequence(data.results);
         });
 
         return () => {
             socket.off("room_update");
             socket.off("battle_start");
-            socket.off("battle_finished");
+            socket.off("battle_results");
         };
-    }, [socket, room.id, currentUser]);
+    }, [socket, room.id]);
 
-    const handleToggleReady = () => {
-        if (!socket || isSpectator) return;
-        socket.emit("toggle_ready", { roomId: room.id, userId: currentUser.id });
+    const handleHostExecution = async () => {
+        if (!isHost) return;
+
+        const res = await executeBattleAction(room.id);
+        if (res.success && res.results) {
+            socket?.emit("sync_results", {
+                roomId: room.id,
+                results: res.results,
+                winnerId: res.winnerId
+            });
+        }
     };
 
-    const handleJoin = () => {
-        if (!socket) return;
-        socket.emit("join_room", {
+    const startAnimationSequence = async (results: BattleResult[]) => {
+        setRoom(prev => ({ ...prev, status: "running" }));
+
+        for (let i = 0; i < room.crateCount; i++) {
+            setCurrentRound(i);
+            setIsRollingRound(true);
+            await new Promise(r => setTimeout(r, 2000)); // Roll time
+            setIsRollingRound(false);
+            await new Promise(r => setTimeout(r, 1500)); // Reveal wait
+        }
+
+        setRoom(prev => ({
+            ...prev,
+            status: "finished",
+            results: results,
+            winnerId: results.reduce((max, r) => r.totalValue > max.totalValue ? r : max).participantId
+        }));
+    };
+
+    const handleToggleReady = () => {
+        if (!socket || !isParticipant) return;
+        socket.emit("update_room", {
             roomId: room.id,
-            userId: currentUser.id,
-            userName: currentUser.name,
-            userAvatar: currentUser.avatar
+            room: {
+                ...room,
+                participants: room.participants.map(p =>
+                    p.id === currentUser.id ? { ...p, ready: !p.ready } : p
+                )
+            }
         });
     };
 
-    const handleStartBattle = () => {
+    const handleJoin = () => {
+        if (!socket || isParticipant || room.participants.length >= room.maxPlayers) return;
+        const updatedParticipants = [...room.participants, {
+            id: currentUser.id,
+            name: currentUser.name,
+            avatar: currentUser.avatar,
+            ready: true
+        }];
+        socket.emit("update_room", {
+            roomId: room.id,
+            room: { ...room, participants: updatedParticipants }
+        });
+    };
+
+    const handleStartBattle = async () => {
         if (!socket || !isHost) return;
         setIsStarting(true);
-        socket.emit("start_battle", { roomId: room.id, hostId: currentUser.id });
+        const res = await startBattleAction(room.id);
+        if (res.success) {
+            socket.emit("start_battle", { roomId: room.id, hostId: currentUser.id });
+        } else {
+            alert(res.error);
+            setIsStarting(false);
+        }
     };
 
     const handleLeave = () => {
-        if (socket) {
-            socket.emit("leave_room", { roomId: room.id, userId: currentUser.id });
+        if (socket && isParticipant) {
+            socket.emit("update_room", {
+                roomId: room.id,
+                room: { ...room, participants: room.participants.filter(p => p.id !== currentUser.id) }
+            });
         }
         router.push(`/dashboard/${guildId}/battle`);
     };
@@ -155,215 +276,294 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
     const allReady = room.participants.every(p => p.ready);
     const canStart = isHost && room.participants.length >= 2 && allReady && room.status === "waiting";
 
+    // Progress percentage
+    const progress = Math.max(0, ((currentRound + (isRollingRound ? 0.5 : 1)) / room.crateCount) * 100);
+
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-20">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <button onClick={handleLeave} className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors">
-                    <ArrowLeft size={20} />
-                    <span className="font-bold text-sm">Kembali ke Lobby</span>
+        <div className="max-w-6xl mx-auto space-y-6 pb-20 relative">
+            {/* Header Sticky */}
+            <div className="flex items-center justify-between bg-background/80 backdrop-blur-xl p-3 sm:p-4 rounded-2xl sm:rounded-3xl sticky top-20 z-30 border border-white/5 shadow-2xl">
+                <button onClick={handleLeave} className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors px-2 sm:px-4 py-2 hover:bg-white/5 rounded-xl">
+                    <ArrowLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <span className="font-bold text-[10px] sm:text-xs uppercase tracking-widest italic tracking-tighter">KABURRR</span>
                 </button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="hidden sm:flex flex-col items-end mr-2">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase opacity-50">Room Hash</p>
+                        <p className="text-xs font-mono font-bold">#{room.roomCode}</p>
+                    </div>
                     <button
                         onClick={handleCopyCode}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                        className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-muted-foreground hover:text-white"
                     >
-                        {isCopied ? <CheckCheck size={16} className="text-emerald-400" /> : <Copy size={16} />}
-                        <span className="font-black text-xs uppercase">#{room.roomCode}</span>
+                        {isCopied ? <CheckCheck size={16} className="text-emerald-400 sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
                     </button>
                     <div className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase",
-                        room.status === "waiting" ? "bg-amber-500/20 text-amber-400" :
-                            room.status === "running" ? "bg-red-500/20 text-red-400" :
-                                "bg-emerald-500/20 text-emerald-400"
+                        "px-3 sm:px-6 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[8px] sm:text-[10px] font-black uppercase tracking-tighter shadow-lg shadow-black/40",
+                        room.status === "waiting" ? "bg-amber-500/20 text-amber-500 border border-amber-500/20" :
+                            room.status === "running" ? "bg-red-500 text-white border border-red-400/50 animate-pulse" :
+                                "bg-emerald-500 text-white border border-emerald-400/50"
                     )}>
-                        {room.status === "waiting" ? "Menunggu" : room.status === "running" ? "Berlangsung" : "Selesai"}
+                        {room.status === "waiting" ? "NYARI TUMBAL" : room.status === "running" ? "GACOR KANG!!" : "DONE MASZEHH"}
                     </div>
                 </div>
             </div>
 
-            {/* Room Info Card */}
-            <div className="glass-card rounded-[32px] border-white/5 p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-500">
-                            <Swords size={28} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black uppercase italic">Battle Room</h2>
-                            <div className="flex items-center gap-3 mt-1 text-xs font-bold text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <Zap size={12} />
-                                    {room.caseType} ({room.crateCount}x)
-                                </span>
-                                <span className="text-white/20">|</span>
-                                <span className="flex items-center gap-1">
-                                    <Users size={12} />
-                                    {room.participants.length}/{room.maxPlayers}
-                                </span>
-                                <span className="text-white/20">|</span>
-                                <span>Entry: Rp {(caseConfig?.cost * room.crateCount || 0).toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
+            {/* Battle Main Stage */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-                    {room.status === "waiting" && (
-                        <div className="flex gap-3">
-                            {isParticipant && !isHost && (
-                                <button
-                                    onClick={handleToggleReady}
-                                    className={cn(
-                                        "px-6 py-3 rounded-2xl font-black uppercase text-xs transition-all",
-                                        room.participants.find(p => p.id === currentUser.id)?.ready
-                                            ? "bg-emerald-500 text-white"
-                                            : "bg-white/5 border border-white/10"
-                                    )}
-                                >
-                                    {room.participants.find(p => p.id === currentUser.id)?.ready ? (
-                                        <span className="flex items-center gap-2"><Check size={16} /> READY!</span>
-                                    ) : (
-                                        "CLICK TO READY"
-                                    )}
-                                </button>
-                            )}
-                            {isSpectator && room.participants.length < room.maxPlayers && (
-                                <button
-                                    onClick={handleJoin}
-                                    className="px-6 py-3 rounded-2xl bg-red-500 text-white font-black uppercase text-xs shadow-xl shadow-red-500/20"
-                                >
-                                    JOIN BATTLE
-                                </button>
-                            )}
-                            {canStart && (
-                                <button
-                                    onClick={handleStartBattle}
-                                    disabled={isStarting}
-                                    className="px-8 py-3 rounded-2xl bg-red-500 text-white font-black uppercase text-xs shadow-xl shadow-red-500/20 flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    {isStarting ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                                    MULAI BATTLE!
-                                </button>
-                            )}
+                {/* Players Column */}
+                <div className="lg:col-span-3 space-y-4">
+
+                    {/* Progress Bar (Visible when running) */}
+                    {room.status === "running" && (
+                        <div className="glass-card rounded-2xl p-2 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 h-full bg-red-500/10 transition-all duration-500" style={{ width: `${progress}%` }} />
+                            <div className="flex items-center justify-between px-4 relative z-10">
+                                <span className="text-[10px] font-black uppercase text-red-500 italic flex items-center gap-2">
+                                    <Zap size={12} className="animate-pulse" /> PROSES PEMBERSIHAN DOYA
+                                </span>
+                                <span className="text-[10px] font-black uppercase text-muted-foreground">
+                                    Ronde {currentRound + 1} / {room.crateCount}
+                                </span>
+                            </div>
                         </div>
                     )}
-                </div>
-            </div>
 
-            {/* Participants Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Array.from({ length: room.maxPlayers }).map((_, idx) => {
-                    const participant = room.participants[idx];
-                    const result = room.results?.find(r => r.participantId === participant?.id);
-                    const isWinner = participant?.id === room.winnerId;
+                    {/* Participants Row/Container */}
+                    <div className={cn(
+                        "grid gap-4",
+                        room.status === "waiting" ? "grid-cols-2 md:grid-cols-4" : "grid-cols-1"
+                    )}>
+                        {Array.from({ length: room.maxPlayers }).map((_, idx) => {
+                            const p = room.participants[idx];
+                            const pResults = battleResults?.find(r => r.participantId === p?.id);
+                            const currentTotal = pResults?.skins.slice(0, currentRound + (isRollingRound ? 0 : 1)).reduce((sum, s) => sum + s.marketPrice, 0) || 0;
+                            const isWinner = room.status === "finished" && p?.id === room.winnerId;
 
-                    return (
-                        <motion.div
-                            key={idx}
-                            layout
-                            className={cn(
-                                "glass-card rounded-[28px] border-white/5 p-5 text-center transition-all",
-                                isWinner && "border-amber-500/50 bg-amber-500/10"
-                            )}
-                        >
-                            {participant ? (
-                                <div className="space-y-3">
-                                    <div className="relative inline-block">
-                                        {participant.avatar ? (
-                                            <img src={participant.avatar} alt="" className="w-16 h-16 rounded-2xl mx-auto object-cover" />
-                                        ) : (
-                                            <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center font-black text-xl mx-auto">
-                                                {participant.name[0]}
-                                            </div>
+                            // In Battle View, we show each player in a row with their rolls
+                            if (room.status !== "waiting" && p) {
+                                return (
+                                    <motion.div
+                                        key={p.id}
+                                        layout
+                                        className={cn(
+                                            "glass-card rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 items-center relative overflow-hidden transition-all duration-700",
+                                            isWinner ? "border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)] sm:shadow-[0_0_40px_rgba(245,158,11,0.2)]" : "border-white/5"
                                         )}
+                                    >
                                         {isWinner && (
-                                            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
-                                                <Crown size={16} className="text-white" />
+                                            <div className="absolute top-0 right-0 p-4">
+                                                <Crown className="text-amber-500 drop-shadow-glow" size={32} />
                                             </div>
                                         )}
-                                        {participant.id === room.hostId && !isWinner && (
-                                            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                                                <Crown size={10} className="text-white" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black uppercase text-sm">{participant.name}</h4>
-                                        {room.status === "waiting" && (
-                                            <span className={cn(
-                                                "text-[10px] font-black uppercase",
-                                                participant.ready ? "text-emerald-400" : "text-muted-foreground"
-                                            )}>
-                                                {participant.ready ? "READY" : "NOT READY"}
-                                            </span>
-                                        )}
-                                        {result && (
-                                            <div className="mt-2 space-y-1">
-                                                <p className="text-[10px] font-black text-muted-foreground uppercase">{result.skins.length} Skins</p>
-                                                <p className={cn(
-                                                    "text-sm font-black",
-                                                    isWinner ? "text-amber-400" : "text-white"
-                                                )}>
-                                                    Rp {result.totalValue.toLocaleString()}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="py-6 space-y-2">
-                                    <div className="w-16 h-16 rounded-2xl bg-white/5 border-2 border-dashed border-white/10 mx-auto flex items-center justify-center">
-                                        <Users size={24} className="text-muted-foreground" />
-                                    </div>
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground">Slot Kosong</p>
-                                </div>
-                            )}
-                        </motion.div>
-                    );
-                })}
-            </div>
 
-            {/* Results Display */}
-            {room.status === "finished" && room.results && (
-                <div className="space-y-6">
-                    <h3 className="text-xl font-black uppercase italic text-center flex items-center justify-center gap-3">
-                        <Trophy size={24} className="text-amber-400" />
-                        HASIL BATTLE
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {room.results?.map((result) => (
-                            <div key={result.participantId} className={cn(
-                                "glass-card rounded-[24px] border-white/5 p-4",
-                                result.participantId === room.winnerId && "border-amber-500/50"
-                            )}>
-                                <div className="flex items-center gap-3 mb-3">
-                                    {result.participantId === room.winnerId && <Crown size={18} className="text-amber-400" />}
-                                    <span className="font-black uppercase">{result.participantName}</span>
-                                    <span className="ml-auto text-sm font-black text-emerald-400">
-                                        Rp {result.totalValue.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-5 gap-2">
-                                    {result.skins.slice(0, 10).map((skin, idx) => (
-                                        <div key={idx} className="relative group aspect-square bg-white/5 rounded-lg overflow-hidden">
-                                            <img src={skin.image} alt="" className="w-full h-full object-contain" />
-                                            <div className="absolute bottom-0 left-0 w-full h-1" style={{ backgroundColor: skin.rarity?.color }} />
+                                        {/* Player Profile & Stats */}
+                                        <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2 sm:gap-3 min-w-[120px] sm:min-w-[140px]">
+                                            <div className="relative">
+                                                {p.avatar ? (
+                                                    <img src={p.avatar} alt={p.name} className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover ring-2 ring-white/5" />
+                                                ) : (
+                                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center font-black text-lg sm:text-xl border border-white/10 uppercase">{p.name[0]}</div>
+                                                )}
+                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-background border border-white/10 flex items-center justify-center text-[8px] sm:text-[10px] font-black">
+                                                    #{idx + 1}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black uppercase text-[10px] sm:text-sm italic line-clamp-1">{p.name}</h4>
+                                                <p className="text-lg sm:text-xl font-black text-white mt-0.5 sm:mt-1">{formatRupiah(currentTotal)}</p>
+                                                <p className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest">HASIL NYOPET</p>
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+
+                                        {/* Carousel / Current Roll Area */}
+                                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 w-full">
+                                            {/* Previous Rolls */}
+                                            {Array.from({ length: currentRound }).map((_, rIdx) => (
+                                                <div key={rIdx} className="relative group opacity-50 hover:opacity-100 transition-opacity">
+                                                    <img src={pResults?.skins[rIdx].image} alt="" className="w-full aspect-square object-contain bg-white/5 rounded-xl border border-white/5" />
+                                                    <div className="absolute bottom-1 left-1 px-1 bg-black/60 rounded text-[8px] font-bold">
+                                                        {formatRupiah(pResults!.skins[rIdx].marketPrice, false)}
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {/* Current Roll */}
+                                            {room.status === "running" && currentRound < room.crateCount && (
+                                                <div className="col-span-full sm:col-span-1">
+                                                    <SkinCarousel
+                                                        skin={isRollingRound ? null : (pResults?.skins[currentRound] || null)}
+                                                        isRolling={isRollingRound}
+                                                        roundIndex={currentRound}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Summary for Finished */}
+                                            {room.status === "finished" && (
+                                                <div className="col-span-full border-t border-white/5 pt-4 mt-2 flex items-center justify-between">
+                                                    <div className="flex -space-x-3 overflow-hidden">
+                                                        {pResults?.skins.slice(0, 5).map((s, i) => (
+                                                            <img key={i} src={s.image} className="inline-block h-8 w-8 rounded-full ring-2 ring-background bg-white/5 border border-white/10" />
+                                                        ))}
+                                                        {pResults!.skins.length > 5 && (
+                                                            <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-background bg-muted text-[8px] font-black">
+                                                                +{pResults!.skins.length - 5}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase text-muted-foreground transition-all">Detail</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            }
+
+                            // Lobby View
+                            return (
+                                <motion.div key={idx} className={cn(
+                                    "glass-card rounded-3xl p-6 border-white/5 text-center flex flex-col items-center gap-4 transition-all hover:scale-[1.02]",
+                                    p ? "bg-white/5" : "bg-transparent border-dashed border-2 border-white/10"
+                                )}>
+                                    {p ? (
+                                        <>
+                                            <div className="relative">
+                                                {p.avatar ? (
+                                                    <img src={p.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/5" />
+                                                ) : (
+                                                    <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center font-black text-2xl uppercase">{p.name[0]}</div>
+                                                )}
+                                                {p.id === room.hostId && (
+                                                    <div className="absolute -top-1 -right-1 w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white border-2 border-background">
+                                                        <Crown size={12} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black uppercase text-sm italic">{p.name}</h4>
+                                                <div className={cn(
+                                                    "mt-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                                                    p.ready ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-white/5 text-muted-foreground border border-white/10"
+                                                )}>
+                                                    {p.ready ? "READY!" : "PENDING"}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="py-8 space-y-3 opacity-30">
+                                            <Users size={32} className="mx-auto" />
+                                            <p className="text-[10px] font-black uppercase tracking-tighter">Slot Kosong</p>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
 
-            {/* Spectators */}
-            {room.spectators && room.spectators.length > 0 && (
-                <div className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    <Eye size={12} className="inline mr-2" />
-                    {room.spectators.length} Penonton: {room.spectators.map(s => s.name).join(", ")}
+                {/* Sidebar Info */}
+                <div className="space-y-4">
+                    {/* Case Config Card */}
+                    <div className="glass-card rounded-[32px] p-6 border-white/5 space-y-6">
+                        <div className="flex flex-col items-center text-center gap-3">
+                            <div className="w-16 h-16 rounded-3xl bg-red-500/20 flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                                <Swords size={32} />
+                            </div>
+                            <h3 className="text-xl font-black uppercase italic tracking-tighter">Battle Arena</h3>
+                        </div>
+
+                        <div className="space-y-3 border-t border-white/5 pt-6">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-muted-foreground">Case Type</span>
+                                <span className="text-xs font-bold uppercase">{room.caseType}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-muted-foreground">Cases per Player</span>
+                                <span className="text-xs font-bold">{room.crateCount}x</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-muted-foreground">Entry Fee</span>
+                                <span className="text-xs font-bold text-emerald-400">{formatRupiah(caseConfig?.cost * room.crateCount || 0)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-muted-foreground">Prize Pool (Est.)</span>
+                                <span className="text-xs font-bold text-amber-400">{formatRupiah(caseConfig?.cost * room.crateCount * room.participants.length || 0)}</span>
+                            </div>
+                        </div>
+
+                        {room.status === "waiting" && (
+                            <div className="pt-4 space-y-3">
+                                {isParticipant ? (
+                                    <button
+                                        onClick={handleToggleReady}
+                                        className={cn(
+                                            "w-full py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl",
+                                            room.participants.find(p => p.id === currentUser.id)?.ready
+                                                ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                                                : "bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10"
+                                        )}
+                                    >
+                                        {room.participants.find(p => p.id === currentUser.id)?.ready ? "I'm Ready!" : "Mark as Ready"}
+                                    </button>
+                                ) : room.participants.length < room.maxPlayers && (
+                                    <button
+                                        onClick={handleJoin}
+                                        className="w-full py-4 rounded-2xl bg-red-500 text-white font-black uppercase text-xs tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.02] transition-all"
+                                    >
+                                        Join Battle
+                                    </button>
+                                )}
+
+                                {canStart && (
+                                    <button
+                                        onClick={handleStartBattle}
+                                        disabled={isStarting}
+                                        className="w-full py-5 rounded-2xl bg-indigo-600 text-white font-black uppercase text-xs tracking-widest shadow-[0_0_30px_rgba(79,70,229,0.3)] hover:scale-[1.02] transition-all flex items-center justify-center gap-3 active:scale-95"
+                                    >
+                                        {isStarting ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} fill="currentColor" />}
+                                        Start Battle
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Activity Box */}
+                    <div className="glass-card rounded-[32px] p-6 border-white/5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <History size={16} className="text-muted-foreground" />
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">GOSIP TERKINI</h4>
+                        </div>
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="text-[10px] font-bold text-muted-foreground/50 text-center py-4">Habitat judi dibuat oleh {room.hostName}</div>
+                            {room.participants.map(p => (
+                                <div key={p.id} className="flex items-center gap-2 text-[10px] font-bold">
+                                    <span className="text-white">{p.name}</span>
+                                    <span className="text-muted-foreground">masuk ke kandang</span>
+                                </div>
+                            ))}
+                            {room.status === "running" && (
+                                <div className="text-[10px] font-bold text-red-500/50 text-center py-4 italic">BATTLE DIMULAI, SIAP-SIAP MISKIN!</div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            )}
+            </div>
+
+            {/* Background Atmosphere */}
+            <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+                <div className={cn(
+                    "absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full transition-all duration-1000",
+                    room.status === "running" ? "bg-red-500/10" : "bg-primary/5"
+                )} />
+                <div className={cn(
+                    "absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full transition-all duration-1000",
+                    room.status === "finished" ? "bg-amber-500/10" : "bg-indigo-500/5"
+                )} />
+            </div>
         </div>
     );
 };

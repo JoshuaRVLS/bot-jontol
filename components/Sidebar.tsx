@@ -22,7 +22,11 @@ import {
     Sliders,
     Gamepad2,
     Cog,
-    Coins
+    Coins,
+    Users,
+    MousePointer2,
+    RotateCcw,
+    Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,32 +67,44 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
 
     const menuCategories: MenuCategory[] = [
         {
-            label: "Economy",
+            label: "EKONOMI",
             icon: Coins,
             items: [
-                { label: "Economy", icon: Wallet, href: `/dashboard/${guildId}/economy`, devOnly: false },
-                { label: "Investments", icon: TrendingUp, href: `/dashboard/${guildId}/invest`, devOnly: false },
-                { label: "Shop & Items", icon: Store, href: `/dashboard/${guildId}/shop`, devOnly: false },
+                { label: "Ringkasan Ekonomi", icon: Wallet, href: `/dashboard/${guildId}/economy`, devOnly: false },
+                { label: "Clicker Game", icon: MousePointer2, href: `/dashboard/${guildId}/clicker`, devOnly: false, highlight: true },
+                { label: "Investasi", icon: TrendingUp, href: `/dashboard/${guildId}/invest`, devOnly: false },
+                { label: "Toko", icon: Store, href: `/dashboard/${guildId}/shop`, devOnly: false },
             ]
         },
         {
-            label: "Gaming",
+            label: "GAMES & GACHA",
             icon: Gamepad2,
             defaultOpen: true,
             items: [
-                { label: "Battle Arena", icon: Swords, href: `/dashboard/${guildId}/battle`, devOnly: false, highlight: true },
-                { label: "Skin Gacha", icon: Zap, href: `/dashboard/${guildId}/gacha`, devOnly: false, highlight: true },
-                { label: "Skin Inventory", icon: Package, href: `/dashboard/${guildId}/inventory`, devOnly: false },
+                { label: "Gacha Battle", icon: Swords, href: `/dashboard/${guildId}/battle`, devOnly: false, highlight: true },
+                { label: "Blackjack", icon: Coins, href: `/dashboard/${guildId}/blackjack`, devOnly: false, highlight: true },
+                { label: "Suit Multiplayer", icon: Gamepad2, href: `/dashboard/${guildId}/suit`, devOnly: false, highlight: true },
+                { label: "Gacha", icon: Zap, href: `/dashboard/${guildId}/gacha`, devOnly: false, highlight: true },
+                { label: "Inventory", icon: Package, href: `/dashboard/${guildId}/inventory`, devOnly: false },
             ]
         },
         {
-            label: "System",
+            label: "KOMPETISI",
+            icon: Trophy,
+            items: [
+                { label: "Leaderboard", icon: Trophy, href: `/dashboard/${guildId}/leaderboard`, devOnly: false },
+            ]
+        },
+        {
+            label: "SISTEM",
             icon: Cog,
             items: [
-                { label: "Commands", icon: Terminal, href: `/dashboard/${guildId}/commands`, devOnly: false },
-                { label: "Bot Settings", icon: Settings, href: `/dashboard/${guildId}/settings`, devOnly: true },
-                { label: "Moderation", icon: ShieldAlert, href: `/dashboard/${guildId}/moderation`, devOnly: true },
-                { label: "Gacha Config", icon: Sliders, href: `/dashboard/${guildId}/gacha/config`, devOnly: true },
+                { label: "Daftar Command", icon: Terminal, href: `/dashboard/${guildId}/commands`, devOnly: false },
+                { label: "Daftar User", icon: Users, href: `/dashboard/${guildId}/users`, devOnly: true },
+                { label: "Pengaturan", icon: Settings, href: `/dashboard/${guildId}/settings`, devOnly: true },
+                { label: "RESET DATA", icon: RotateCcw, href: `/dashboard/${guildId}/developer/reset`, devOnly: true },
+                { label: "Moderasi", icon: ShieldAlert, href: `/dashboard/${guildId}/moderation`, devOnly: true },
+                { label: "Konfigurasi Gacha", icon: Sliders, href: `/dashboard/${guildId}/gacha/config`, devOnly: true },
             ]
         },
     ];
@@ -107,109 +123,126 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
     })).filter(category => category.items.length > 0);
 
     const sidebarContent = (
-        <div className="flex flex-col h-full">
-            <div className="p-6">
-                <Link href="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group">
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="p-6 pb-0">
+                <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group">
                     <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                    <span className="text-sm font-semibold">Ganti Server</span>
+                    <span className="text-sm font-semibold">Kembali</span>
                 </Link>
                 <div className="h-px bg-border mb-6" />
 
                 {/* Overview - Always visible */}
-                <Link
-                    href={`/dashboard/${guildId}`}
-                    className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium mb-4",
-                        pathname === `/dashboard/${guildId}`
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                    )}
+                <motion.div
+                    whileHover={{ scale: 1.05, rotate: -2 }}
+                    whileTap={{ scale: 0.95 }}
                 >
-                    <LayoutDashboard size={20} />
-                    Overview
-                </Link>
+                    <Link
+                        href={`/dashboard/${guildId}`}
+                        className={cn(
+                            "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black uppercase text-xs tracking-widest mb-6 border relative overflow-hidden group hover:rotate-2",
+                            pathname === `/dashboard/${guildId}`
+                                ? "bg-red-500 text-white border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] rotate-[-2deg]"
+                                : "text-muted-foreground border-white/5 hover:border-red-500/50 hover:text-white"
+                        )}
+                    >
+                        {pathname === `/dashboard/${guildId}` && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                        )}
+                        <div className="relative">
+                            <LayoutDashboard size={20} className={cn(pathname === `/dashboard/${guildId}` && "animate-bounce")} />
+                            {pathname === `/dashboard/${guildId}` && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping" />}
+                        </div>
+                        COMMAND CENTER
+                    </Link>
+                </motion.div>
 
                 <div className="h-px bg-border mb-4" />
+            </div>
 
-                {/* Categories */}
-                <nav className="space-y-2">
-                    {filteredCategories.map((category) => {
-                        const isCategoryOpen = openCategories.includes(category.label);
-                        const hasActiveItem = category.items.some(item => pathname === item.href);
+            {/* Categories - Scrollable */}
+            <nav className="flex-1 overflow-y-auto px-6 py-2 custom-scrollbar space-y-2">
+                {filteredCategories.map((category) => {
+                    const isCategoryOpen = openCategories.includes(category.label);
+                    const hasActiveItem = category.items.some(item => pathname === item.href);
 
-                        return (
-                            <div key={category.label}>
-                                <button
-                                    onClick={() => handleToggleCategory(category.label)}
+                    return (
+                        <div key={category.label}>
+                            <button
+                                onClick={() => handleToggleCategory(category.label)}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all font-semibold text-sm",
+                                    hasActiveItem
+                                        ? "text-primary"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                                )}
+                                aria-expanded={isCategoryOpen}
+                                aria-label={`Toggle ${category.label} menu`}
+                                tabIndex={0}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <category.icon size={18} />
+                                    {category.label}
+                                </div>
+                                <ChevronDown
+                                    size={16}
                                     className={cn(
-                                        "w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all font-semibold text-sm",
-                                        hasActiveItem
-                                            ? "text-primary"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                                        "transition-transform duration-200",
+                                        isCategoryOpen ? "rotate-180" : ""
                                     )}
-                                    aria-expanded={isCategoryOpen}
-                                    aria-label={`Toggle ${category.label} menu`}
-                                    tabIndex={0}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <category.icon size={18} />
-                                        {category.label}
-                                    </div>
-                                    <ChevronDown
-                                        size={16}
-                                        className={cn(
-                                            "transition-transform duration-200",
-                                            isCategoryOpen ? "rotate-180" : ""
-                                        )}
-                                    />
-                                </button>
+                                />
+                            </button>
 
-                                <AnimatePresence>
-                                    {isCategoryOpen && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: "auto", opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="ml-4 mt-1 space-y-1 border-l border-white/10 pl-4">
-                                                {category.items.map((item) => {
-                                                    const isActive = pathname === item.href;
-                                                    const isHighlight = item.highlight && !isActive;
+                            <AnimatePresence>
+                                {isCategoryOpen && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="ml-4 mt-1 space-y-1 border-l border-white/10 pl-4">
+                                            {category.items.map((item, i) => {
+                                                const isActive = pathname === item.href;
+                                                const isHighlight = item.highlight && !isActive;
 
-                                                    return (
+                                                return (
+                                                    <motion.div
+                                                        key={item.href}
+                                                        whileHover={{ x: 5, rotate: i % 2 === 0 ? 1 : -1 }}
+                                                        transition={{ type: "spring", stiffness: 400 }}
+                                                    >
                                                         <Link
-                                                            key={item.href}
                                                             href={item.href}
                                                             className={cn(
-                                                                "relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium",
+                                                                "relative flex items-center gap-3 px-3 py-3 rounded-[20px] transition-all text-[10px] font-black uppercase tracking-tight overflow-hidden group",
                                                                 isActive
-                                                                    ? "bg-primary text-primary-foreground shadow-md"
+                                                                    ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)] border-red-400 rotate-1 scale-[1.02]"
                                                                     : isHighlight
-                                                                        ? "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-400 border border-amber-500/20 hover:from-amber-500/20 hover:to-orange-500/20"
-                                                                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                                                        ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 hover:-rotate-1"
+                                                                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground hover:border-white/20 border border-transparent hover:rotate-1"
                                                             )}
                                                         >
-                                                            <item.icon size={16} className={isHighlight ? "text-amber-400" : ""} />
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <item.icon size={18} className={cn(isActive && "animate-pulse", isHighlight && "text-amber-400")} />
                                                             {item.label}
                                                             {isHighlight && (
-                                                                <span className="ml-auto text-[7px] font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-orange-500 text-black px-1.5 py-0.5 rounded-full animate-pulse">
-                                                                    HOT
+                                                                <span className="ml-auto text-[7px] font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-orange-500 text-black px-2 py-0.5 rounded-full animate-bounce">
+                                                                    GACOR
                                                                 </span>
                                                             )}
                                                         </Link>
-                                                    );
-                                                })}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        );
-                    })}
-                </nav>
-            </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    );
+                })}
+            </nav>
 
             <div className="mt-auto p-6 space-y-4">
                 <div className="glass-card p-4 rounded-2xl text-[10px] space-y-2 bg-white/5 border-white/5">
@@ -230,8 +263,8 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
             {/* Mobile Header Toggle */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-40 p-4 flex items-center justify-between bg-background/80 backdrop-blur-xl border-b border-white/5">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-black text-xs">J</div>
-                    <span className="font-black italic uppercase tracking-tighter">Dashboard</span>
+                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-black text-xs animate-spin-slow">J</div>
+                    <span className="font-black italic uppercase tracking-tighter">HABITAT JONTOL</span>
                 </div>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
@@ -258,11 +291,14 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
 
             {/* Sidebar Desktop & Mobile Sliding */}
             <aside className={cn(
-                "fixed top-0 left-0 z-50 h-screen transition-transform duration-500 ease-in-out border-r border-white/5 bg-[#0f1115] shadow-2xl lg:shadow-none",
+                "fixed top-0 left-0 z-50 h-screen transition-transform duration-500 ease-in-out border-r border-white/5 bg-[#0a0b0e] shadow-[20px_0_50px_rgba(0,0,0,0.5)] lg:shadow-none",
                 "w-72 lg:translate-x-0",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                {sidebarContent}
+                <div className="absolute inset-0 bg-gradient-to-b from-red-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
+                <div className="relative h-full flex flex-col">
+                    {sidebarContent}
+                </div>
             </aside>
 
             {/* Spacer for desktop */}

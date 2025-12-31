@@ -76,7 +76,7 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
     const handleSellSelected = async () => {
         if (selectedIds.length === 0 || isSelling) return;
 
-        const confirmSell = confirm(`Yakin mau jual ${selectedIds.length} skin ini bang?`);
+        const confirmSell = confirm(`Jual ${selectedIds.length} item pilihan?`);
         if (!confirmSell) return;
 
         setIsSelling(true);
@@ -86,7 +86,7 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
             setSelectedIds([]);
             router.refresh();
         } else {
-            toast(res.error || "Gagal jual skin bang.", "error");
+            toast(res.error || "Gagal menjual item.", "error");
         }
         setIsSelling(false);
     };
@@ -97,13 +97,13 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
         return (
             <div className="flex flex-col items-center justify-center py-20 glass-card rounded-[40px] border-white/5 bg-white/5">
                 <PackageOpen size={64} className="text-muted-foreground mb-4 opacity-20" />
-                <h3 className="text-xl font-black italic uppercase">Inventory Masih Melompong</h3>
-                <p className="text-muted-foreground mt-2">Buruan gacha bang, biar keren inventory lu.</p>
+                <h3 className="text-xl font-black italic uppercase">Inventory Kosong</h3>
+                <p className="text-muted-foreground mt-2">Dapatkan item dari gacha atau pertempuran.</p>
                 <button
                     onClick={() => router.push(`./gacha`)}
                     className="mt-8 px-8 py-3 bg-primary rounded-2xl font-black italic tracking-wider hover:scale-105 transition-all"
                 >
-                    GAS GACHA!
+                    BUKA GACHA
                 </button>
             </div>
         );
@@ -114,14 +114,14 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
             {/* Controls Bar */}
             <div className="flex flex-col gap-4 p-4 sm:p-6 glass-card rounded-3xl border-white/5">
                 {/* Search Row */}
-                <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                <div className="relative group rotate-[-0.5deg]">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-red-500 transition-colors" size={18} />
                     <input
                         type="text"
                         placeholder="Cari skin..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                        className="w-full bg-white/5 border border-white/10 rounded-3xl py-4 pl-12 pr-4 focus:outline-none focus:border-red-500 transition-all text-xs font-black uppercase tracking-widest placeholder:opacity-30"
                     />
                 </div>
 
@@ -153,22 +153,24 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
                 </div>
 
                 {/* Actions Row */}
-                <div className="flex gap-3 pt-3 border-t border-white/5">
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-white/5">
                     <button
                         onClick={handleSelectAll}
-                        className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-black uppercase transition-all"
+                        className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-black uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95"
                     >
-                        {selectedIds.length === filteredSkins.length ? "Batal" : "Pilih Semua"}
+                        {selectedIds.length === filteredSkins.length ? "BATAL ABANGKU" : "PILIH SEMUA TUMBAL"}
                     </button>
 
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleSellSelected}
                         disabled={selectedIds.length === 0 || isSelling}
-                        className="flex-1 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black uppercase text-xs hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-30"
+                        className="flex-[1.5] py-4 rounded-2xl bg-red-500 text-white font-black uppercase text-xs tracking-[0.2em] shadow-[0_15px_30px_rgba(239,68,68,0.3)] hover:bg-red-400 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:grayscale"
                     >
-                        {isSelling ? <Loader2 className="animate-spin" size={14} /> : <CircleDollarSign size={14} />}
-                        JUAL ({selectedIds.length})
-                    </button>
+                        {isSelling ? <Loader2 className="animate-spin" size={16} /> : <CircleDollarSign size={16} />}
+                        JUAL SEMUA ({selectedIds.length}) → AUTO KAYA
+                    </motion.button>
                 </div>
             </div>
 
@@ -181,18 +183,19 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
                             <motion.div
                                 layout
                                 key={skin.instanceId}
-                                initial={{ opacity: 0, scale: 0.9 }}
+                                initial={{ opacity: 0, scale: 0.9, rotate: Math.random() * 6 - 3 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
+                                whileHover={{ scale: 1.1, rotate: 0, zIndex: 10 }}
                                 transition={{ duration: 0.2 }}
                                 onClick={() => handleToggleSelect(skin.instanceId)}
-                                className={`group relative glass-card rounded-3xl border-transparent hover:border-white/20 transition-all cursor-pointer overflow-hidden flex flex-col ${isSelected ? "ring-2 ring-primary bg-primary/5" : ""
+                                className={`group relative glass-card rounded-[40px] border-transparent hover:border-red-500/40 transition-all cursor-pointer overflow-hidden flex flex-col shadow-2xl ${isSelected ? "ring-4 ring-red-500 bg-red-500/10 rotate-0" : ""
                                     }`}
                             >
                                 {/* Selection Indicator */}
-                                <div className={`absolute top-4 right-4 z-20 w-6 h-6 rounded-full border-2 border-white/20 flex items-center justify-center transition-all ${isSelected ? "bg-primary border-primary" : "bg-black/20"
+                                <div className={`absolute top-6 right-6 z-20 w-8 h-8 rounded-2xl border-2 border-white/20 flex items-center justify-center transition-all shadow-xl ${isSelected ? "bg-red-500 border-red-400 rotate-12" : "bg-black/40"
                                     }`}>
-                                    {isSelected && <CheckCircle2 size={14} className="text-white" />}
+                                    {isSelected && <CheckCircle2 size={16} className="text-white" />}
                                 </div>
 
                                 {/* Skin Preview */}

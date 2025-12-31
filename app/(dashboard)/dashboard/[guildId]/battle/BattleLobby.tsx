@@ -47,12 +47,11 @@ interface BattleLobbyProps {
 }
 
 const CASE_OPTIONS: { id: CaseType; label: string; color: string }[] = [
-    { id: "budget", label: "Kasta Najis (15k)", color: "bg-gray-500" },
-    { id: "classic", label: "Kasta Rendah (100k)", color: "bg-blue-500" },
-    { id: "highroller", label: "Kasta Menengah (1M)", color: "bg-purple-500" },
-    { id: "elite", label: "Kasta Tinggi (10M)", color: "bg-red-500" },
-    { id: "sultan", label: "Kasta Sultan (100M)", color: "bg-amber-500" },
-    { id: "godtier", label: "Kasta Tuhan (5Miliar)", color: "bg-cyan-500" },
+    { id: "budget", label: "Budget (5K)", color: "bg-gray-500" },
+    { id: "classic", label: "Classic (25K)", color: "bg-blue-500" },
+    { id: "highroller", label: "Standard (100K)", color: "bg-purple-500" },
+    { id: "elite", label: "Premium (500K)", color: "bg-red-500" },
+    { id: "sultan", label: "Sultan (2JT)", color: "bg-amber-500" },
 ];
 
 export const BattleLobby = ({
@@ -106,7 +105,7 @@ export const BattleLobby = ({
         const totalCost = caseConfig.cost * newRoom.crateCount;
 
         if (userWallet < totalCost) {
-            toast(`Duit lu gak cukup! Butuh Rp ${totalCost.toLocaleString()}`, "error");
+            toast(`Saldo tidak mencukupi! Butuh Rp ${totalCost.toLocaleString()}`, "error");
             return;
         }
 
@@ -122,7 +121,7 @@ export const BattleLobby = ({
         if (res.success && res.room) {
             router.push(`/dashboard/${guildId}/battle/${res.room.id}`);
         } else {
-            toast(res.error || "Gagal bikin room!", "error");
+            toast(res.error || "Gagal membuat ruangan!", "error");
         }
         setIsCreating(false);
         setIsCreateModalOpen(false);
@@ -146,8 +145,8 @@ export const BattleLobby = ({
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                         {isConnected ? "LIVE" : "CONNECTING..."}
                     </span>
-                    <span className="text-xs font-bold text-muted-foreground">
-                        {rooms.length} room aktif
+                    <span className="text-xs font-bold text-muted-foreground uppercase">
+                        {rooms.length} Ruangan Aktif
                     </span>
                 </div>
 
@@ -156,7 +155,7 @@ export const BattleLobby = ({
                     className="px-6 py-3 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-red-500/20 hover:scale-105 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <Plus size={18} />
-                    Bikin Room
+                    BUAT RUANGAN
                 </button>
             </div>
 
@@ -169,11 +168,17 @@ export const BattleLobby = ({
                             <motion.div
                                 key={room.id}
                                 layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
+                                initial={{ opacity: 0, scale: 0.9, rotate: Math.random() * 4 - 2 }}
+                                animate={{ opacity: 1, scale: 1, rotate: Math.random() * 2 - 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="glass-card rounded-[28px] border-white/5 overflow-hidden group hover:border-red-500/30 transition-all"
+                                whileHover={{
+                                    scale: 1.05,
+                                    rotate: 0,
+                                    boxShadow: "0 0 40px rgba(239, 68, 68, 0.2)"
+                                }}
+                                className="glass-card rounded-[40px] border-white/5 overflow-hidden group hover:border-red-500/50 transition-all relative"
                             >
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-[40px] pointer-events-none" />
                                 <div className={cn("h-2", caseOption?.color || "bg-gray-500")} />
                                 <div className="p-5 space-y-4">
                                     <div className="flex items-center justify-between">
@@ -243,8 +248,8 @@ export const BattleLobby = ({
                             <Swords size={40} className="text-muted-foreground" />
                         </div>
                         <div>
-                            <h4 className="font-black uppercase italic text-lg">Arena Sepi</h4>
-                            <p className="text-sm text-muted-foreground">Belum ada yang bikin room. Jadi yang pertama!</p>
+                            <h4 className="font-black uppercase italic text-lg text-primary animate-pulse">BELUM ADA RUANGAN</h4>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-2 opacity-50">Jadilah yang pertama untuk memulai pertempuran!</p>
                         </div>
                     </div>
                 )}
@@ -262,27 +267,27 @@ export const BattleLobby = ({
                             onClick={() => !isCreating && setIsCreateModalOpen(false)}
                         />
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="relative w-full max-w-lg glass-card rounded-[40px] border-white/10 p-8"
+                            initial={{ opacity: 0, scale: 1.2, rotate: 10 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                            className="relative w-full max-w-lg glass-card rounded-[60px] border-white/10 p-10 overflow-y-auto max-h-[90vh] shadow-[0_0_100px_rgba(239,68,68,0.2)]"
                         >
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center text-white">
-                                        <Swords size={20} />
+                            <div className="flex items-center justify-between mb-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-red-500 flex items-center justify-center text-white rotate-6 shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                                        <Swords size={28} />
                                     </div>
-                                    <h3 className="font-black italic uppercase text-xl">Bikin Room Battle</h3>
+                                    <h3 className="font-black italic uppercase text-3xl tracking-tighter">BUAT RUANGAN</h3>
                                 </div>
-                                <button onClick={() => setIsCreateModalOpen(false)} className="p-2 rounded-full hover:bg-white/5">
-                                    <X size={20} />
+                                <button onClick={() => setIsCreateModalOpen(false)} className="p-3 rounded-full hover:bg-white/5 hover:text-red-500 transition-colors">
+                                    <X size={24} />
                                 </button>
                             </div>
 
                             <div className="space-y-6">
                                 {/* Case Type */}
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pilih Kasta Case</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pilih Tipe Case</label>
                                     <div className="grid grid-cols-1 gap-2">
                                         {CASE_OPTIONS.map((opt) => (
                                             <button
@@ -306,7 +311,7 @@ export const BattleLobby = ({
 
                                 {/* Crate Count */}
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Jumlah Case per Player</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Jumlah Case</label>
                                     <div className="flex gap-2">
                                         {[1, 3, 5, 10].map((n) => (
                                             <button
@@ -376,7 +381,7 @@ export const BattleLobby = ({
                                         <span>Rp {totalCost.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-xs font-bold">
-                                        <span className="text-muted-foreground">Saldo Lu</span>
+                                        <span className="text-muted-foreground">Saldo Anda</span>
                                         <span className={userWallet < totalCost ? "text-red-400" : "text-emerald-400"}>
                                             Rp {userWallet.toLocaleString()}
                                         </span>
@@ -388,7 +393,7 @@ export const BattleLobby = ({
                                     disabled={isCreating || userWallet < totalCost}
                                     className="w-full py-5 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isCreating ? <Loader2 className="animate-spin mx-auto" /> : "BIKIN ROOM!"}
+                                    {isCreating ? <Loader2 className="animate-spin mx-auto" /> : "BUAT PERTEMPURAN"}
                                 </button>
                             </div>
                         </motion.div>

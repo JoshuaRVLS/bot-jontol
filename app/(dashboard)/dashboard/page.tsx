@@ -26,8 +26,8 @@ export default async function DashboardMain() {
             <div className="max-w-6xl mx-auto space-y-10">
                 <header className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold">Pilih Server</h2>
-                        <p className="text-muted-foreground mt-1">Mana server yang mau abang atur hari ini?</p>
+                        <h2 className="text-3xl font-black italic uppercase tracking-tighter italic">Absen Server Abangku 🔥</h2>
+                        <p className="text-muted-foreground mt-1 text-xs font-bold uppercase tracking-widest opacity-50">Silahkan pilih habitat judi abang hari ini.</p>
                     </div>
                     <div className="flex items-center gap-4 p-2 pr-4 bg-muted/30 rounded-full border border-border">
                         <img src={session.user.image} className="w-10 h-10 rounded-full" alt="avatar" />
