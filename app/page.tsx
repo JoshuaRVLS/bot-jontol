@@ -18,26 +18,42 @@ import {
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 
-const FloatingMeme = ({ emoji, delay }: { emoji: string; delay: number }) => (
-  <motion.div
-    initial={{ y: "110vh", x: Math.random() * 100 + "%", opacity: 0 }}
-    animate={{
-      y: "-10vh",
-      opacity: [0, 1, 1, 0],
-      rotate: [0, 360],
-      x: (Math.random() * 100) + "%"
-    }}
-    transition={{
-      duration: 10 + Math.random() * 10,
-      repeat: Infinity,
-      delay,
-      ease: "linear"
-    }}
-    className="fixed pointer-events-none text-4xl sm:text-6xl z-[-1]"
-  >
-    {emoji}
-  </motion.div>
-);
+const FloatingMeme = ({ emoji, delay }: { emoji: string; delay: number }) => {
+  const [randomValues, setRandomValues] = useState({
+    xInitial: "50%",
+    xAnimate: "50%",
+    duration: 15
+  });
+
+  useEffect(() => {
+    setRandomValues({
+      xInitial: Math.random() * 100 + "%",
+      xAnimate: (Math.random() * 100) + "%",
+      duration: 10 + Math.random() * 10
+    });
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ y: "110vh", x: randomValues.xInitial, opacity: 0 }}
+      animate={{
+        y: "-10vh",
+        opacity: [0, 1, 1, 0],
+        rotate: [0, 360],
+        x: randomValues.xAnimate
+      }}
+      transition={{
+        duration: randomValues.duration,
+        repeat: Infinity,
+        delay,
+        ease: "linear"
+      }}
+      className="fixed pointer-events-none text-4xl sm:text-6xl z-[-1]"
+    >
+      {emoji}
+    </motion.div>
+  );
+};
 
 export default function LandingPage() {
   const { data: session } = useSession();

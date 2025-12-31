@@ -168,8 +168,8 @@ export const BattleLobby = ({
                             <motion.div
                                 key={room.id}
                                 layout
-                                initial={{ opacity: 0, scale: 0.9, rotate: Math.random() * 4 - 2 }}
-                                animate={{ opacity: 1, scale: 1, rotate: Math.random() * 2 - 1 }}
+                                initial={{ opacity: 0, scale: 0.9, rotate: (room.id.charCodeAt(0) % 4) - 2 }}
+                                animate={{ opacity: 1, scale: 1, rotate: (room.id.charCodeAt(1) % 2) - 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 whileHover={{
                                     scale: 1.05,

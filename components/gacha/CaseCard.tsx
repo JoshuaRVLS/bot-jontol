@@ -27,7 +27,7 @@ const CaseCard = ({ config, guildId }: CaseCardProps) => {
     return (
         <>
             <div
-                style={{ rotate: `${(Math.random() * 4 - 2)}deg` }}
+                style={{ rotate: `${(config.id.charCodeAt(0) % 4 - 2)}deg` }}
                 className="glass-card group p-1 rounded-[48px] transition-all duration-500 hover:scale-[1.05] hover:rotate-0 relative overflow-hidden flex flex-col h-full border-white/5 hover:border-red-500/30 shadow-2xl"
             >
                 <div className={`h-48 rounded-[28px] bg-gradient-to-br ${gradientClass} flex items-center justify-center p-6 relative overflow-hidden`}>

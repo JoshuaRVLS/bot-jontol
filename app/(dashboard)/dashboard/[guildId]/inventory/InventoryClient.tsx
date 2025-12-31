@@ -183,7 +183,7 @@ export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) 
                             <motion.div
                                 layout
                                 key={skin.instanceId}
-                                initial={{ opacity: 0, scale: 0.9, rotate: Math.random() * 6 - 3 }}
+                                initial={{ opacity: 0, scale: 0.9, rotate: (skin.instanceId.charCodeAt(0) % 6) - 3 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 whileHover={{ scale: 1.1, rotate: 0, zIndex: 10 }}
