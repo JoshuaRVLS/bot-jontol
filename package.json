@@ -1,0 +1,41 @@
+{
+  "name": "dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "web": "npx tsx ./server.ts"
+  },
+  "dependencies": {
+    "@next/env": "^16.1.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "framer-motion": "^12.23.26",
+    "lucide-react": "^0.562.0",
+    "nat-upnp": "^1.1.1",
+    "next": "15.3.3",
+    "next-auth": "^4.24.13",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "recharts": "^3.6.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.1.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/nat-upnp": "^1.1.5",
+    "@types/node": "^20.19.27",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "prisma": "^6.1.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
