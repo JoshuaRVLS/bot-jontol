@@ -100,6 +100,7 @@ export const Sidebar = ({ guildId, isDeveloper = false }: { guildId: string; isD
             icon: Cog,
             items: [
                 { label: "Daftar Command", icon: Terminal, href: `/dashboard/${guildId}/commands`, devOnly: false },
+                { label: "Panduan Pemula", icon: ShieldAlert, href: `/dashboard/${guildId}/guide`, devOnly: false },
                 { label: "Daftar User", icon: Users, href: `/dashboard/${guildId}/users`, devOnly: true },
                 { label: "Pengaturan", icon: Settings, href: `/dashboard/${guildId}/settings`, devOnly: true },
                 { label: "RESET DATA", icon: RotateCcw, href: `/dashboard/${guildId}/developer/reset`, devOnly: true },
