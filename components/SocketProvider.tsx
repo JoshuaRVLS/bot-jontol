@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 
 interface SocketContextType {
@@ -18,8 +18,8 @@ export const useSocket = () => useContext(SocketContext);
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000";
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
+    const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
         const socketInstance = io(SOCKET_URL, {
@@ -43,7 +43,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
             console.error("[Socket] Connection error:", err.message);
         });
 
-        socketRef.current = socketInstance;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSocket(socketInstance);
 
         return () => {
             socketInstance.disconnect();
@@ -51,7 +52,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <SocketContext.Provider value={{ socket: socketRef.current, isConnected }}>
+        <SocketContext.Provider value={{ socket, isConnected }}>
             {children}
         </SocketContext.Provider>
     );
