@@ -191,9 +191,7 @@ export default function SuitClient({
 
     // Keep activeRoom ref up to date for socket closures
     const activeRoomRef = useRef(activeRoom);
-    useEffect(() => {
-        activeRoomRef.current = activeRoom;
-    }, [activeRoom]);
+    activeRoomRef.current = activeRoom;
 
     // Handlers
     const handleCreateRoom = async () => {

@@ -115,8 +115,8 @@ export const processClick = async (multiplier: number = 1): Promise<{
     const variance = 0.5 + Math.random();
     let earned = Math.floor(baseEarning * multiplier * variance);
 
-    let isCrit = Math.random() < 0.15;
-    let isJackpot = Math.random() < 0.005;
+    const isCrit = Math.random() < 0.15;
+    const isJackpot = Math.random() < 0.005;
     let jackpotAmount = 0;
 
     if (isCrit) {

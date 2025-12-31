@@ -1,19 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import {
-    Swords,
-    Crown,
-    Users,
-    Check,
-    Play,
-    Trophy,
-    Eye,
-    ArrowLeft,
-    Loader2,
-    Copy,
-    CheckCheck,
+CheckCheck,
     Zap,
     History,
     Dices
@@ -147,44 +134,15 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
 
     // Animation State
     const [battleResults, setBattleResults] = useState<BattleResult[] | null>(null);
-    const [lockedWinnerId, setLockedWinnerId] = useState<string | null>(null);
     const [currentRound, setCurrentRound] = useState(-1); // -1: lobby, 0+: rolling
     const [isRollingRound, setIsRollingRound] = useState(false);
 
-    const { socket, isConnected } = useSocket();
+    const { socket } = useSocket();
     const router = useRouter();
 
     const isHost = currentUser.id === room.hostId;
     const isParticipant = room.participants.some(p => p.id === currentUser.id);
     const caseConfig = CASE_CONFIGS[room.caseType as CaseType];
-
-    // Initialize/Sync
-    useEffect(() => {
-        if (!socket) return;
-
-        socket.emit("spectate_room", { roomId: room.id, userId: currentUser.id, userName: currentUser.name });
-
-        socket.on("room_update", (updatedRoom: BattleRoom) => {
-            setRoom(updatedRoom);
-        });
-
-        socket.on("battle_start", () => {
-            setRoom(prev => ({ ...prev, status: "running" }));
-            handleHostExecution();
-        });
-
-        socket.on("battle_results", (data: { results: BattleResult[], winnerId: string }) => {
-            setBattleResults(data.results);
-            setLockedWinnerId(data.winnerId);
-            startAnimationSequence(data.results);
-        });
-
-        return () => {
-            socket.off("room_update");
-            socket.off("battle_start");
-            socket.off("battle_results");
-        };
-    }, [socket, room.id]);
 
     const handleHostExecution = async () => {
         if (!isHost) return;
@@ -217,6 +175,34 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
             winnerId: results.reduce((max, r) => r.totalValue > max.totalValue ? r : max).participantId
         }));
     };
+
+    // Initialize/Sync
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.emit("spectate_room", { roomId: room.id, userId: currentUser.id, userName: currentUser.name });
+
+        socket.on("room_update", (updatedRoom: BattleRoom) => {
+            setRoom(updatedRoom);
+        });
+
+        socket.on("battle_start", () => {
+            setRoom(prev => ({ ...prev, status: "running" }));
+            handleHostExecution();
+        });
+
+        socket.on("battle_results", (data: { results: BattleResult[], winnerId: string }) => {
+            setBattleResults(data.results);
+            startAnimationSequence(data.results);
+        });
+
+        return () => {
+            socket.off("room_update");
+            socket.off("battle_start");
+            socket.off("battle_results");
+        };
+    }, [socket, room.id]);
+
 
     const handleToggleReady = () => {
         if (!socket || !isParticipant) return;

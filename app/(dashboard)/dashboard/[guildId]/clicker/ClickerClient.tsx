@@ -38,7 +38,8 @@ export default function ClickerClient({ guildId, initialWallet }: ClickerClientP
     const [feverMode, setFeverMode] = useState(false);
     const [feverProgress, setFeverProgress] = useState(0);
     const [milestone, setMilestone] = useState<number | null>(null);
-    const [particles, setParticles] = useState<{ id: string, x: number, y: number }[]>([]);
+    const [particles, setParticles] = useState<{ id: string, x: number, y: number, targetX: number, targetY: number }[]>([]);
+    const [clickRotation, setClickRotation] = useState(0);
 
     const buttonRef = useRef<HTMLButtonElement>(null);
     const clickTimestamps = useRef<number[]>([]);
@@ -96,11 +97,15 @@ export default function ClickerClient({ guildId, initialWallet }: ClickerClientP
                 id: particleId,
                 x: e.clientX - rect.left + (Math.random() - 0.5) * 50,
                 y: e.clientY - rect.top,
+                targetX: (Math.random() - 0.5) * 100,
+                targetY: -80 + Math.random() * 40
             }]);
             setTimeout(() => {
                 setParticles(prev => prev.filter(p => p.id !== particleId));
             }, 500);
         }
+
+        setClickRotation(Math.random() * 10 - 5);
 
         const result = await processClick(multiplier);
 
@@ -306,7 +311,7 @@ export default function ClickerClient({ guildId, initialWallet }: ClickerClientP
                         onClick={handleClick}
                         animate={{
                             scale: isClicking ? 0.9 : 1,
-                            rotate: isClicking ? (Math.random() * 10 - 5) : 0,
+                            rotate: isClicking ? clickRotation : 0,
                             boxShadow: feverMode
                                 ? "0 0 100px rgba(249, 115, 22, 0.8), 0 0 40px rgba(239, 68, 68, 0.6)"
                                 : "0 30px 60px -12px rgba(249, 115, 22, 0.4)",
@@ -351,8 +356,8 @@ export default function ClickerClient({ guildId, initialWallet }: ClickerClientP
                                 animate={{
                                     opacity: 0,
                                     scale: 0,
-                                    y: -80 + Math.random() * 40,
-                                    x: (Math.random() - 0.5) * 100,
+                                    y: p.targetY,
+                                    x: p.targetX,
                                 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.4 }}
