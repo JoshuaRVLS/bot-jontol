@@ -38,7 +38,7 @@ export async function getBattleRoomAction(roomId: string) {
 
 export async function executeBattleAction(roomId: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const room = await prisma.battleRoom.findUnique({ where: { id: roomId } });
@@ -204,7 +204,7 @@ export async function createBattleRoomAction(data: {
     isTeamMode: boolean;
 }) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -240,7 +240,7 @@ export async function createBattleRoomAction(data: {
 
 export async function startBattleAction(roomId: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const room = await prisma.battleRoom.findUnique({ where: { id: roomId } });
@@ -262,7 +262,7 @@ export async function startBattleAction(roomId: string) {
 
 export async function leaveBattleRoomAction(roomId: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const room = await prisma.battleRoom.findUnique({ where: { id: roomId } });
@@ -302,3 +302,4 @@ export async function leaveBattleRoomAction(roomId: string) {
         return { success: false, error: "Gagal kabur dari room." };
     }
 }
+

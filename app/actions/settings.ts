@@ -29,3 +29,4 @@ export const saveGuildConfig = async (guildId: string, data: {
         return { success: false, error: "Gagal menyimpan konfigurasi ke database." };
     }
 };
+

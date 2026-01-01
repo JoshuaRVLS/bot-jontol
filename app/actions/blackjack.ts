@@ -81,15 +81,15 @@ const calculateHandValue = (hand: Card[]): number => {
 
 export const startBJAction = async (bet: number) => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
 
     try {
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return { error: "User gak ada!" };
-        if (user.wallet < bet) return { error: "Saldo wallet lu gak cukup bang!" };
-        if (bet < 1000) return { error: "Minimal bet Rp 1.000 bang!" };
+        if (user.wallet < bet) return { error: "Saldo wallet lu tidak mencukupi." };
+        if (bet < 1000) return { error: "Minimal bet Rp 1.000." };
 
         // Deduct bet immediately
         await prisma.user.update({
@@ -107,7 +107,7 @@ export const startBJAction = async (bet: number) => {
         const playerValue = calculateHandValue(playerHand);
         const dealerValue = calculateHandValue(dealerHand);
         let status: BlackjackState["status"] = "playing";
-        let message = "Mainkan kartu lu bang!";
+        let message = "Mainkan kartu lu.";
 
         if (playerValue === 21) {
             status = "blackjack";
@@ -144,12 +144,12 @@ export const startBJAction = async (bet: number) => {
 
 export const hitBJAction = async () => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     const game = activeGames.get(userId);
 
-    if (!game || game.status !== "playing") return { error: "Gak ada game aktif bang!" };
+    if (!game || game.status !== "playing") return { error: "Gak ada game aktif." };
 
     const card = game.deck.pop()!;
     game.playerHand.push(card);
@@ -159,7 +159,7 @@ export const hitBJAction = async () => {
 
     if (playerValue > 21) {
         game.status = "bust";
-        game.message = "BUST! Lu kalah bang.";
+        game.message = "BUST! Lu kalah.";
         activeGames.delete(userId);
     }
 
@@ -168,12 +168,12 @@ export const hitBJAction = async () => {
 
 export const standBJAction = async () => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     const game = activeGames.get(userId);
 
-    if (!game || game.status !== "playing") return { error: "Gak ada game aktif bang!" };
+    if (!game || game.status !== "playing") return { error: "Gak ada game aktif." };
 
     let dealerValue = calculateHandValue(game.dealerHand);
 
@@ -196,10 +196,10 @@ export const standBJAction = async () => {
         });
     } else if (dealerValue > playerValue) {
         game.status = "lose";
-        game.message = "Dealer menang bang. Hoki lu lagi abis.";
+        game.message = "Dealer menang. Hoki lu lagi abis.";
     } else if (dealerValue < playerValue) {
         game.status = "win";
-        game.message = "Lu menang bang! Mantap.";
+        game.message = "Lu menang. Mantap.";
         await prisma.user.update({
             where: { id: userId },
             data: { wallet: { increment: game.bet * 2 } }
@@ -219,12 +219,12 @@ export const standBJAction = async () => {
 
 export const doubleBJAction = async () => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     const game = activeGames.get(userId);
 
-    if (!game || game.status !== "playing") return { error: "Gak ada game aktif bang!" };
+    if (!game || game.status !== "playing") return { error: "Gak ada game aktif." };
 
     // Check if player has enough money for double bet
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -257,12 +257,12 @@ export const doubleBJAction = async () => {
 
 export const surrenderBJAction = async () => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     const game = activeGames.get(userId);
 
-    if (!game || game.status !== "playing") return { error: "Gak ada game aktif bang!" };
+    if (!game || game.status !== "playing") return { error: "Gak ada game aktif." };
 
     // Refund half bet
     const refund = Math.floor(game.bet / 2);
@@ -277,3 +277,4 @@ export const surrenderBJAction = async () => {
     activeGames.delete(userId);
     return { success: true, state: { ...game, deck: [] } };
 };
+

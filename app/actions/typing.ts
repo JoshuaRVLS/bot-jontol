@@ -41,7 +41,7 @@ export async function createTypingRoomAction(data: {
     isPrivate: boolean;
 }) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     if (!user || user.wallet < data.bet) return { success: false, error: "Saldo gak cukup!" };
@@ -251,3 +251,4 @@ export async function leaveTypingRoomAction(roomId: string) {
         return { success: false, error: "Gagal leave room." };
     }
 }
+

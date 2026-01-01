@@ -10,12 +10,12 @@ import { addXp } from "@/lib/leveling";
 
 export async function openCaseAction(guildId: string, caseId: CaseType, amount: number = 1, isCrazy: boolean = false) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     const config = CASE_CONFIGS[caseId];
 
-    if (!config) return { error: "Case gak valid bang!" };
+    if (!config) return { error: "Case gak valid." };
     if (amount <= 0 || amount > 5) return { error: "Jumlah gacha gak valid (1-5)!" };
 
     try {
@@ -27,7 +27,7 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
 
         const totalCost = config.cost * amount;
         if (user.wallet < totalCost) {
-            return { error: `Saldo wallet lu gak cukup bang. Gacha ${amount}x butuh Rp ${totalCost.toLocaleString()}` };
+            return { error: `Saldo wallet lu gak cukup. Gacha ${amount}x butuh Rp ${totalCost.toLocaleString()}` };
         }
 
         const skinsCache = await getSkins();
@@ -114,7 +114,7 @@ export async function openCaseAction(guildId: string, caseId: CaseType, amount: 
 
 export async function sellSkinsAction(instanceIds: string[]) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
 
@@ -127,7 +127,7 @@ export async function sellSkinsAction(instanceIds: string[]) {
 
         const inv = { ...(user.inventory as any) || {} };
         if (!Array.isArray(inv.csSkins)) {
-            return { error: "Inventory lu kosong bang!" };
+            return { error: "Inventory lu kosong." };
         }
 
         const skinsToSell = inv.csSkins.filter((s: any) => instanceIds.includes(s.instanceId));
@@ -149,13 +149,13 @@ export async function sellSkinsAction(instanceIds: string[]) {
         return { success: true, totalValue };
     } catch (error) {
         console.error("[Sell Action Error]", error);
-        return { error: "Gagal jual skin bang." };
+        return { error: "Gagal jual skin." };
     }
 }
 
 export async function getGuildGachaConfig(guildId: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     try {
         const config = await prisma.guildConfig.findUnique({
@@ -165,17 +165,17 @@ export async function getGuildGachaConfig(guildId: string) {
         return { success: true, config: config?.gachaConfig || null };
     } catch (error) {
         console.error("[Get Gacha Config Error]", error);
-        return { error: "Gagal ambil config gacha bang." };
+        return { error: "Gagal ambil config gacha." };
     }
 }
 
 export async function updateGuildGachaConfig(guildId: string, config: any) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     // Basic validation: ensure it's an object and has the expected case types
     if (typeof config !== "object" || config === null) {
-        return { error: "Config gak valid bang!" };
+        return { error: "Config gak valid." };
     }
 
     try {
@@ -189,13 +189,13 @@ export async function updateGuildGachaConfig(guildId: string, config: any) {
         return { success: true };
     } catch (error) {
         console.error("[Update Gacha Config Error]", error);
-        return { error: "Gagal update config gacha bang." };
+        return { error: "Gagal update config gacha." };
     }
 }
 
 export async function getUserGachaConfig(userId: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     try {
         const user = await prisma.user.findUnique({
@@ -206,13 +206,13 @@ export async function getUserGachaConfig(userId: string) {
         return { success: true, config: user?.gachaConfig || null };
     } catch (error) {
         console.error("[Get User Gacha Config Error]", error);
-        return { error: "Gagal ambil config user bang." };
+        return { error: "Gagal ambil config user." };
     }
 }
 
 export async function updateUserGachaConfig(userId: string, config: any) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     try {
         await prisma.user.update({
@@ -223,13 +223,13 @@ export async function updateUserGachaConfig(userId: string, config: any) {
         return { success: true };
     } catch (error) {
         console.error("[Update User Gacha Config Error]", error);
-        return { error: "Gagal update config user bang." };
+        return { error: "Gagal update config user." };
     }
 }
 
 export async function searchUsersAction(query: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     try {
         const users = await prisma.user.findMany({
@@ -246,6 +246,7 @@ export async function searchUsersAction(query: string) {
         return { success: true, users };
     } catch (error) {
         console.error("[Search Users Error]", error);
-        return { error: "Gagal cari user bang." };
+        return { error: "Gagal cari user." };
     }
 }
+

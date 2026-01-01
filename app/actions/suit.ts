@@ -28,11 +28,11 @@ export async function createSuitRoomAction(data: {
     isPrivate: boolean;
 }) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     // Check balance
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (!user || user.wallet < data.bet) return { success: false, error: "Saldo wallet lu gak cukup bang!" };
+    if (!user || user.wallet < data.bet) return { success: false, error: "Saldo wallet lu tidak mencukupi." };
 
     try {
         const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -70,19 +70,19 @@ export async function createSuitRoomAction(data: {
 
 export async function joinSuitRoomAction(roomId: string) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const room = await prisma.suitRoom.findUnique({ where: { id: roomId } });
         if (!room) return { success: false, error: "Room gak ketemu!" };
-        if (room.status !== "waiting") return { success: false, error: "Game udah jalan bang!" };
+        if (room.status !== "waiting") return { success: false, error: "Game udah jalan." };
 
         const participants = (room.participants as any[]) || [];
         if (participants.length >= 2) return { success: false, error: "Room penuh!" };
 
         // Check balance
         const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-        if (!user || user.wallet < room.bet) return { success: false, error: "Saldo gak cukup bang!" };
+        if (!user || user.wallet < room.bet) return { success: false, error: "Saldo tidak mencukupi." };
 
         if (participants.some(p => p.id === session.user.id)) return { success: true, room };
 
@@ -113,7 +113,7 @@ export async function joinSuitRoomAction(roomId: string) {
 
 export async function processSuitResultAction(roomId: string, winnerId: string | null) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const room = await prisma.suitRoom.findUnique({ where: { id: roomId } });
@@ -260,3 +260,4 @@ export async function leaveSuitRoomAction(roomId: string) {
         return { success: false, error: "Gagal leave room." };
     }
 }
+

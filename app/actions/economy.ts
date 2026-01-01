@@ -7,12 +7,12 @@ import { revalidatePath } from "next/cache";
 
 export async function manageBalanceAction(type: "deposit" | "withdraw", amount: number) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
 
     if (amount <= 0 || isNaN(amount)) {
-        return { error: "Jumlahnya yang bener dong bang!" };
+        return { error: "Masukkan jumlah yang valid." };
     }
 
     try {
@@ -23,7 +23,7 @@ export async function manageBalanceAction(type: "deposit" | "withdraw", amount: 
         if (!user) return { error: "User gak ketemu!" };
 
         if (type === "deposit") {
-            if (user.wallet < amount) return { error: "Duit di wallet gak cukup bang!" };
+            if (user.wallet < amount) return { error: "Saldo wallet tidak mencukupi." };
 
             await prisma.user.update({
                 where: { id: userId },
@@ -33,7 +33,7 @@ export async function manageBalanceAction(type: "deposit" | "withdraw", amount: 
                 }
             });
         } else {
-            if (user.bank < amount) return { error: "Duit di bank gak cukup bang!" };
+            if (user.bank < amount) return { error: "Saldo bank tidak mencukupi." };
 
             await prisma.user.update({
                 where: { id: userId },
@@ -51,3 +51,4 @@ export async function manageBalanceAction(type: "deposit" | "withdraw", amount: 
         return { error: "Gagal memproses transaksi ekonomi." };
     }
 }
+

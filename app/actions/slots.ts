@@ -20,7 +20,7 @@ const getRandomSymbol = (): SymbolID => {
 
 export const spinSlotsAction = async (bet: number, isCrazy: boolean = false) => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     if (bet < 1000) return { error: "Minimal bet Rp 1.000!" };
@@ -127,6 +127,7 @@ export const spinSlotsAction = async (bet: number, isCrazy: boolean = false) => 
 
     } catch (e) {
         console.error(e);
-        return { error: "Slot machine rusak bang! Coba lagi." };
+        return { error: "Slot machine rusak. Coba lagi." };
     }
 };
+

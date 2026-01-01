@@ -8,12 +8,12 @@ import { revalidatePath } from "next/cache";
 
 export async function buyItemAction(itemId: string, amount: number = 1) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const userId = session.user.id;
     const item = getItem(itemId);
 
-    if (!item) return { error: "Itemnya kaga ada bang!" };
+    if (!item) return { error: "Itemnya kaga ada." };
     if (amount <= 0) return { error: "Jumlahnya yang bener dong!" };
 
     const totalCost = item.price * amount;
@@ -24,7 +24,7 @@ export async function buyItemAction(itemId: string, amount: number = 1) {
         });
 
         if (!user) return { error: "User gak ketemu!" };
-        if (user.wallet < totalCost) return { error: "Duit di wallet kaga cukup bang!" };
+        if (user.wallet < totalCost) return { error: "Duit di wallet kaga cukup." };
 
         const inv = { ...(user.inventory as any) || {} };
         const currentAmount = (inv as any)[itemId] || 0;
@@ -47,3 +47,4 @@ export async function buyItemAction(itemId: string, amount: number = 1) {
         return { error: "Gagal beli item. Coba lagi deh." };
     }
 }
+

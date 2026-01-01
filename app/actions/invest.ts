@@ -61,9 +61,9 @@ export async function seedMarketAction() {
 
 export async function buyAssetAction(assetId: string, moneyAmount: number) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
-    if (moneyAmount < 1000) return { success: false, error: "Minimal beli Rp 1.000 bang." };
+    if (moneyAmount < 1000) return { success: false, error: "Minimal beli Rp 1.000." };
 
     try {
         const [user, asset] = await Promise.all([
@@ -73,7 +73,7 @@ export async function buyAssetAction(assetId: string, moneyAmount: number) {
 
         if (!user) return { success: false, error: "User gak ketemu!" };
         if (!asset) return { success: false, error: "Aset gak valid!" };
-        if (user.wallet < moneyAmount) return { success: false, error: "Duit lu kurang bang!" };
+        if (user.wallet < moneyAmount) return { success: false, error: "Duit lu kurang." };
 
         const buyAmount = moneyAmount / asset.price;
         const currentInvestments = (user.investments as Record<string, number>) || {};
@@ -97,7 +97,7 @@ export async function buyAssetAction(assetId: string, moneyAmount: number) {
 
 export async function sellAssetAction(assetId: string, moneyAmount: number) {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { success: false, error: "Login dulu bang!" };
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
         const [user, asset] = await Promise.all([
@@ -113,7 +113,7 @@ export async function sellAssetAction(assetId: string, moneyAmount: number) {
         const amountToSell = moneyAmount / asset.price;
 
         if (currentHolding < amountToSell) {
-            return { success: false, error: "Aset lu gak cukup bang!" };
+            return { success: false, error: "Aset lu tidak mencukupi." };
         }
 
         currentInvestments[assetId] = currentHolding - amountToSell;
@@ -133,3 +133,4 @@ export async function sellAssetAction(assetId: string, moneyAmount: number) {
         return { success: false, error: "Gagal jual aset." };
     }
 }
+

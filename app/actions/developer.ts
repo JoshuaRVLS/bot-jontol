@@ -17,7 +17,7 @@ export const checkIsDeveloper = async (): Promise<boolean> => {
 
 export const getDevelopers = async () => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const isDev = await checkIsDeveloper();
     if (!isDev) return { error: "Bukan developer!" };
@@ -31,7 +31,7 @@ export const getDevelopers = async () => {
 
 export const addDeveloper = async (userId: string, name?: string) => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const isDev = await checkIsDeveloper();
     if (!isDev) return { error: "Bukan developer!" };
@@ -52,13 +52,13 @@ export const addDeveloper = async (userId: string, name?: string) => {
 
 export const removeDeveloper = async (userId: string) => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const isDev = await checkIsDeveloper();
     if (!isDev) return { error: "Bukan developer!" };
 
     if (userId === session.user.id) {
-        return { error: "Gabisa hapus diri sendiri bang!" };
+        return { error: "Gabisa hapus diri sendiri." };
     }
 
     try {
@@ -75,7 +75,7 @@ export const removeDeveloper = async (userId: string) => {
 
 export const resetUserDataAction = async (userId: string, categories: string[]) => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const isDev = await checkIsDeveloper();
     if (!isDev) return { error: "Bukan developer!" };
@@ -106,7 +106,7 @@ export const resetUserDataAction = async (userId: string, categories: string[]) 
         }
 
         if (Object.keys(updateData).length === 0) {
-            return { error: "Pilih kategori datanya dulu bang!" };
+            return { error: "Pilih kategori datanya dulu." };
         }
 
         await prisma.user.update({
@@ -117,13 +117,13 @@ export const resetUserDataAction = async (userId: string, categories: string[]) 
         return { success: true };
     } catch (error) {
         console.error("[Reset Data Error]", error);
-        return { error: "Gagal reset data bang!" };
+        return { error: "Gagal reset data." };
     }
 };
 
 export const resetGlobalDataAction = async (categories: string[]) => {
     const session: any = await getServerSession(authOptions);
-    if (!session) return { error: "Login dulu bang!" };
+    if (!session) return { error: "Silakan login terlebih dahulu." };
 
     const isDev = await checkIsDeveloper();
     if (!isDev) return { error: "Bukan developer!" };
@@ -154,7 +154,7 @@ export const resetGlobalDataAction = async (categories: string[]) => {
         }
 
         if (Object.keys(updateData).length === 0) {
-            return { error: "Pilih kategori datanya dulu bang!" };
+            return { error: "Pilih kategori datanya dulu." };
         }
 
         await prisma.user.updateMany({
@@ -164,6 +164,7 @@ export const resetGlobalDataAction = async (categories: string[]) => {
         return { success: true };
     } catch (error) {
         console.error("[Reset Global Data Error]", error);
-        return { error: "Gagal reset data global bang!" };
+        return { error: "Gagal reset data global." };
     }
 };
+

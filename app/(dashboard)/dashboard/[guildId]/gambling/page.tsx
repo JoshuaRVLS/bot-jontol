@@ -36,7 +36,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
     const games = [
         {
             title: "Gacha Center",
-            description: "Buka case skin CS:GO terkeren dengan jaminan Pity.",
+            description: "Buka case CS:GO dengan sistem pity terjamin.",
             icon: Zap,
             href: `/dashboard/${guildId}/gacha`,
             color: "from-amber-400 to-orange-600",
@@ -45,7 +45,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
         },
         {
             title: "Gacha Battle",
-            description: "Duel buka case lawan player lain. Pemenang ambil semua!",
+            description: "Duel buka case melawan player lain. Yang menang ambil semua.",
             icon: Swords,
             href: `/dashboard/${guildId}/battle`,
             color: "from-red-500 to-rose-700",
@@ -54,7 +54,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
         },
         {
             title: "Blackjack",
-            description: "Lawan Dealer dan menangin taruhan lo di meja kartu.",
+            description: "Main kartu melawan dealer untuk menang taruhan.",
             icon: Coins,
             href: `/dashboard/${guildId}/blackjack`,
             color: "from-emerald-400 to-teal-700",
@@ -62,7 +62,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
         },
         {
             title: "Slots Machine",
-            description: "Putar slot-nya dan cari Jackpot Gacor hari ini.",
+            description: "Putar mesin slot dan coba keberuntunganmu.",
             icon: Dices,
             href: `/dashboard/${guildId}/slots`,
             color: "from-indigo-500 to-blue-700",
@@ -70,7 +70,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
         },
         {
             title: "Typing Race",
-            description: "Adu cepat ketik lawan kawan-kawan. Jari lo lincah?",
+            description: "Lomba ketik cepat melawan pemain lain.",
             icon: Keyboard,
             href: `/dashboard/${guildId}/typing`,
             color: "from-purple-500 to-violet-800",
@@ -79,7 +79,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
         },
         {
             title: "Suit Multiplayer",
-            description: "Game klasik Gunting Batu Kertas lawan player lain.",
+            description: "Gunting Batu Kertas melawan pemain lain.",
             icon: Gamepad2,
             href: `/dashboard/${guildId}/suit`,
             color: "from-slate-500 to-slate-800",
@@ -104,7 +104,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
                         </h1>
                     </div>
                     <p className="text-muted-foreground font-black uppercase tracking-[0.4em] text-xs opacity-40 border-l-2 border-red-500 pl-4 py-1">
-                        Pusat hiburan dan adu nasib Habitat Jontol
+                        Pusat game dan hiburan
                     </p>
                 </div>
 
@@ -175,8 +175,8 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
                     <TrendingUp size={40} className="text-red-500" />
                 </div>
                 <div className="flex-1 space-y-2">
-                    <h3 className="text-xl font-black uppercase italic text-white tracking-widest">SIAP JADI SULTAN HARI INI?</h3>
-                    <p className="text-muted-foreground text-sm font-medium">Setiap kemenangan bakal langsung masuk ke dalam dompet global bot abang.</p>
+                    <h3 className="text-xl font-black uppercase italic text-white tracking-widest">Lihat Statistik</h3>
+                    <p className="text-muted-foreground text-sm font-medium">Kemenangan akan masuk ke dompet global bot.</p>
                 </div>
                 <Link
                     href={`/dashboard/${guildId}/leaderboard`}

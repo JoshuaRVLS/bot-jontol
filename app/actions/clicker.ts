@@ -93,7 +93,7 @@ export const processClick = async (multiplier: number = 1): Promise<{
     if (userData.timestamps.length >= MAX_CLICKS_PER_WINDOW) {
         userData.flagCount++;
         if (userData.flagCount >= FLAG_THRESHOLD) {
-            return { success: false, error: "Rate limit exceeded. Santai bang.", flagged: true };
+            return { success: false, error: "Rate limit exceeded. Santai.", flagged: true };
         }
         return { success: false, error: "Sabar, tunggu sebentar." };
     }
@@ -169,3 +169,4 @@ export const getClickerStats = async (): Promise<{
 
     return user ? { wallet: user.wallet } : null;
 };
+

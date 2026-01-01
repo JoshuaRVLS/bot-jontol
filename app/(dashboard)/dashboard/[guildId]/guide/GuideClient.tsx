@@ -18,92 +18,92 @@ import { cn } from "@/lib/utils";
 const GUIDE_SECTIONS = [
     {
         id: "earning",
-        label: "Cara Dapet Duit",
+        label: "Cara Dapat Uang",
         icon: Wallet,
         color: "bg-emerald-500",
         content: [
             {
                 title: "Clicker Game",
                 icon: MousePointer2,
-                description: "Cara paling gampang buat kumpulin modal awal.",
+                description: "Cara termudah untuk mengumpulkan modal awal.",
                 details: [
-                    "Klik tombol buat dapet duit receh (Default: 100/klik).",
-                    "Ada kesempatan Critical Hit (2x lipat) & JACKPOT!",
-                    "Hati-hati! Klik terlalu cepat bakal kena cooldown.",
-                    "Sistem punya deteksi Macro, jadi mending klik manual santai aja."
+                    "Klik tombol untuk mendapat uang (Default: 100/klik).",
+                    "Ada kesempatan Critical Hit (2x lipat) dan Jackpot.",
+                    "Klik terlalu cepat akan terkena cooldown.",
+                    "Sistem memiliki deteksi macro, disarankan klik manual."
                 ]
             },
             {
-                title: "Investasi Pasar",
+                title: "Investasi",
                 icon: TrendingUp,
-                description: "Putagin duit lu biar beranak pinak.",
+                description: "Investasikan uang untuk mendapat keuntungan.",
                 details: [
-                    "Beli Aset Crypto (BTC, ETH, SOL) atau Saham (GOTO, BBCA, dll).",
-                    "Harga berubah-ubah tiap waktu (High Risk, High Return).",
-                    "Pantau grafik tren pasar sebelum beli.",
-                    "Jangan All-in kalo gak siap miskin mendadak!"
+                    "Beli aset Crypto (BTC, ETH, SOL) atau Saham (GOTO, BBCA, dll).",
+                    "Harga berubah setiap waktu (High Risk, High Return).",
+                    "Pantau grafik tren pasar sebelum membeli.",
+                    "Jangan all-in jika tidak siap menanggung risiko."
                 ]
             },
             {
                 title: "Daily & Work (Discord)",
                 icon: Terminal,
-                description: "Manfaatin command di bot Discord juga.",
+                description: "Gunakan command di bot Discord.",
                 details: [
-                    "Gunakan command `/daily` buat gaji harian.",
-                    "Cari kerjaan pake `/work`.",
-                    "Berani ambil resiko? Coba `/rob` atau `/crime` (Awas denda polisi!)."
+                    "Gunakan command `/daily` untuk hadiah harian.",
+                    "Cari pekerjaan dengan `/work`.",
+                    "Ingin risiko tinggi? Coba `/rob` atau `/crime` (ada risiko denda)."
                 ]
             }
         ]
     },
     {
         id: "games",
-        label: "Games & Judi",
+        label: "Games",
         icon: Gamepad2,
         color: "bg-red-500",
         content: [
             {
                 title: "Gacha Battle (PvP)",
                 icon: Swords,
-                description: "Adu hoki buka case lawan player lain.",
+                description: "Duel buka case melawan player lain.",
                 details: [
-                    "Join atau Bikin Room Battle.",
-                    "Pilih Case (Budget s/d Sultan).",
-                    "Yang dapet total harga skin termahal MENANG SEMUA skin!",
-                    "Mode Group: Bisa main rame-rame hingga 4 orang."
+                    "Join atau buat room battle.",
+                    "Pilih jenis case.",
+                    "Yang dapat total harga skin tertinggi menang semua skin.",
+                    "Mode Group: bisa main hingga 4 orang."
                 ]
             },
             {
                 title: "Suit Multiplayer (PvP)",
                 icon: Gamepad2,
-                description: "Pertarungan klasik Batu-Gunting-Kertas.",
+                description: "Permainan klasik Batu-Gunting-Kertas.",
                 details: [
-                    "Taruhan 1 vs 1 lawan player lain.",
-                    "Pilih move lu (Batu/Gunting/Kertas) secara rahasia.",
-                    "Menang dapet duit taruhan, kalah duit melayang.",
-                    "Real-time, jadi gak ada tipu-tipu."
+                    "Taruhan 1 vs 1 melawan player lain.",
+                    "Pilih move (Batu/Gunting/Kertas) secara rahasia.",
+                    "Menang dapat uang taruhan, kalah kehilangan taruhan.",
+                    "Real-time, tidak ada kecurangan."
                 ]
             },
             {
                 title: "Blackjack",
                 icon: Coins,
-                description: "Lawan Dealer di meja kartu.",
+                description: "Main kartu melawan Dealer.",
                 details: [
-                    "Target: Dapet angka 21 atau lebih tinggi dari Dealer (tanpa bust).",
+                    "Target: dapat angka 21 atau lebih tinggi dari Dealer (tanpa bust).",
                     "Kartu J, Q, K bernilai 10. As bernilai 1 atau 11.",
-                    "Blackjack (As + 10/J/Q/K) bayarannya 3:2!",
-                    "Mikir dulu sebelum 'Hit' atau 'Stand'."
+                    "Blackjack (As + 10/J/Q/K) pembayaran 3:2.",
+                    "Pertimbangkan sebelum 'Hit' atau 'Stand'."
                 ]
             },
             {
                 title: "Gacha CS:GO",
                 icon: Zap,
-                description: "Buka peti iseng-iseng berhadiah.",
+                description: "Buka case untuk mendapat skin.",
                 details: [
                     "Beli Key & Case di menu Gacha.",
-                    "Peluang dapet skin langka (Covert/Gold).",
-                    "Skin bisa dijual lagi ke sistem buat balik modal (atau rugi).",
-                    "Koleksi skin lu bakal masuk ke Inventory."
+                    "Peluang dapat skin langka (Covert/Gold).",
+                    "Skin bisa dijual kembali ke sistem.",
+                    "Koleksi skin akan masuk ke Inventory."
                 ]
             }
         ]
@@ -121,10 +121,10 @@ export default function GuideClient() {
                     <HelpCircle className="w-10 h-10 text-primary" />
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter text-white">
-                    PANDUAN PEMULA
+                    Panduan
                 </h1>
                 <p className="text-muted-foreground font-medium max-w-lg mx-auto">
-                    Bingung mau ngapain? Baca kitab suci ini biar lu paham cara jadi sultan (atau gembel) di Habitat Jontol.
+                    Panduan lengkap untuk memulai dan memahami fitur-fitur yang tersedia.
                 </p>
             </div>
 
@@ -148,7 +148,7 @@ export default function GuideClient() {
                             <section.icon size={20} className={activeTab === section.id ? "text-white" : "text-current"} />
                         </div>
                         <div className="text-left">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">PANDUAN</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Panduan</p>
                             <p className="font-black italic uppercase text-sm sm:text-base">{section.label}</p>
                         </div>
                     </button>

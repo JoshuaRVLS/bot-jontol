@@ -103,3 +103,4 @@ export const getBattleLeaderboard = async (): Promise<LeaderboardEntry[]> => {
         };
     });
 };
+
