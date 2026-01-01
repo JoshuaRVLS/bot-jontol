@@ -90,12 +90,18 @@ export const spinSlotsAction = async (bet: number, isCrazy: boolean = false) => 
             let multiplier = payoutSym.multiplier[count - 1] || 0;
 
             if (isCrazy && multiplier > 0) {
-                // In Crazy Mode, symbols are weighted differently.
-                // High weight (common) symbols should give more, low weight (rare) should give less.
-                // Simple version: find the 'opposite' symbol in terms of rarity/id
-                const oppositeId = 7 - payoutSym.id; // 0 (cherry) <-> 7 (diamond)
-                const oppositeSym = SYMBOLS.find(s => s.id === (oppositeId < 0 ? 0 : oppositeId))!;
-                multiplier = oppositeSym.multiplier[count - 1] || 0;
+                // Crazy Mode: Reduce all payouts significantly (make it harder to win big)
+                // Common symbols get tiny payouts, rare symbols get reduced payouts
+                if (payoutSym.weight >= 200) {
+                    // Common symbols (cherry, lemon): very small payout
+                    multiplier = Math.max(1, Math.floor(multiplier * 0.1));
+                } else if (payoutSym.weight >= 100) {
+                    // Medium symbols: reduced payout
+                    multiplier = Math.max(2, Math.floor(multiplier * 0.3));
+                } else {
+                    // Rare symbols (bar, 7, diamond, wild): moderately reduced
+                    multiplier = Math.max(5, Math.floor(multiplier * 0.5));
+                }
             }
 
             if (multiplier > 0) {

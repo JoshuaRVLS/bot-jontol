@@ -56,6 +56,19 @@ export const LevelProgressView = ({ userLevel, userXp, nextLevelXp, xpProgress }
                         <p className="text-sm font-black text-amber-400 italic">None</p>
                     </div>
                 </div>
+
+                {/* Troll Withdraw Button */}
+                <button
+                    onClick={() => window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1", "_blank")}
+                    className="w-full mt-6 py-5 rounded-[24px] bg-gradient-to-r from-emerald-500 to-green-600 text-white text-sm font-black uppercase tracking-[0.15em] shadow-[0_20px_40px_rgba(16,185,129,0.4)] hover:scale-[1.02] hover:shadow-[0_25px_50px_rgba(16,185,129,0.5)] transition-all active:scale-95 relative overflow-hidden group"
+                    aria-label="Withdraw funds"
+                    tabIndex={0}
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                        💰 WITHDRAW KE REKENING
+                    </span>
+                </button>
             </div>
         </div>
     );

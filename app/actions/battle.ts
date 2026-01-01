@@ -61,7 +61,8 @@ export async function executeBattleAction(roomId: string) {
             godtier: { "covert": 3000, "extraordinary": 7000 }
         };
 
-        const BATTLE_PRICE_MULTIPLIER = 2.0;
+        const isCrazyMode = (room as any).crazyMode;
+        const BATTLE_PRICE_MULTIPLIER = isCrazyMode ? 0.5 : 2.0;
 
         for (const participant of participants) {
             const skins = [];
@@ -74,7 +75,7 @@ export async function executeBattleAction(roomId: string) {
                     0,
                     battleWeights,
                     0,
-                    (room as any).crazyMode
+                    isCrazyMode
                 );
                 const { float, wear } = getSkinFloat();
                 const basePrice = getSkinPrice(rawSkin.rarity?.name || "Consumer Grade", float);
