@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Coins, Swords, RefreshCw, Trophy, AlertTriangle, User as UserIcon, Shield, Zap, Info, HandIcon, Plus, Minus, Check, Play } from "lucide-react";
 import { startBJAction, hitBJAction, standBJAction, doubleBJAction, surrenderBJAction, BlackjackState, Card, Suit, Rank } from "@/app/actions/blackjack";
-import { formatRupiah, formatNumber } from "@/lib/format";
+import { formatRupiah, formatNumber, parseBet } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 
@@ -66,8 +66,20 @@ export default function BlackjackClient({ guildId, initialWallet }: BlackjackCli
     const [gameState, setGameState] = useState<BlackjackState | null>(null);
     const [wallet, setWallet] = useState(initialWallet);
     const [bet, setBet] = useState(10000);
+    const [betInput, setBetInput] = useState("10000");
     const [loading, setLoading] = useState(false);
     const [isDealing, setIsDealing] = useState(false);
+
+    useEffect(() => {
+        setBetInput(bet.toString());
+    }, [bet]);
+
+    const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setBetInput(val);
+        const parsed = parseBet(val);
+        if (parsed > 0) setBet(parsed);
+    };
 
     const handleStart = async () => {
         if (bet < 1000) return toast("Minimal bet Rp 1.000 bang!", "error");
@@ -297,9 +309,10 @@ export default function BlackjackClient({ guildId, initialWallet }: BlackjackCli
                                             <Minus size={20} className="text-white" />
                                         </button>
                                         <input
-                                            type="number"
-                                            value={bet}
-                                            onChange={(e) => setBet(parseInt(e.target.value) || 0)}
+                                            type="text"
+                                            value={betInput}
+                                            onChange={handleBetChange}
+                                            onBlur={() => setBetInput(bet.toString())}
                                             className="flex-1 bg-transparent text-center font-black text-2xl text-white outline-none"
                                         />
                                         <button
@@ -319,6 +332,20 @@ export default function BlackjackClient({ guildId, initialWallet }: BlackjackCli
                                                 {formatNumber(val)}
                                             </button>
                                         ))}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mt-2">
+                                        <button
+                                            onClick={() => setBet(prev => prev + 500000)}
+                                            className="py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-black text-emerald-400 transition-all border border-emerald-500/10 flex items-center justify-center gap-2"
+                                        >
+                                            <Plus size={12} /> 500K
+                                        </button>
+                                        <button
+                                            onClick={() => setBet(prev => prev + 1000000)}
+                                            className="py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[10px] font-black text-amber-400 transition-all border border-amber-500/10 flex items-center justify-center gap-2"
+                                        >
+                                            <Plus size={12} /> 1JT
+                                        </button>
                                     </div>
                                 </div>
                                 <button

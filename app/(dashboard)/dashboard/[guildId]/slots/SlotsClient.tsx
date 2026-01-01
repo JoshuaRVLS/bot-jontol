@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Coins, Trophy, RotateCw, Plus, Minus, Zap } from "lucide-react";
 import { spinSlotsAction } from "@/app/actions/slots";
 import { SymbolID, SYMBOLS } from "@/lib/slots";
-import { formatRupiah, formatNumber } from "@/lib/format";
+import { formatRupiah, formatNumber, parseBet } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 
@@ -27,7 +27,19 @@ export default function SlotsClient({ guildId, initialWallet }: { guildId: strin
     const { toast } = useToast();
     const [wallet, setWallet] = useState(initialWallet);
     const [bet, setBet] = useState(10000);
+    const [betInput, setBetInput] = useState("10000");
     const [spinningReels, setSpinningReels] = useState<boolean[]>([false, false, false, false, false]);
+
+    useEffect(() => {
+        setBetInput(bet.toString());
+    }, [bet]);
+
+    const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setBetInput(val);
+        const parsed = parseBet(val);
+        if (parsed > 0) setBet(parsed);
+    };
     const [isGameActive, setIsGameActive] = useState(false);
     const [grid, setGrid] = useState<SymbolID[]>(Array(15).fill(6));
     const [lastWin, setLastWin] = useState(0);
@@ -115,9 +127,17 @@ export default function SlotsClient({ guildId, initialWallet }: { guildId: strin
                                     <div key={col} className="bg-[#24242e] h-64 sm:h-80 w-16 sm:w-24 relative overflow-hidden">
                                         <AnimatePresence>
                                             {isSpinning && (
-                                                <motion.div initial={{ y: 0 }} animate={{ y: "-100%" }} transition={{ repeat: Infinity, duration: 0.15, ease: "linear" }} className="absolute inset-0 flex flex-col items-center opacity-50 blur-sm">
-                                                    {[...SYMBOLS, ...SYMBOLS].map((s, i) => (
-                                                        <div key={i} className="h-1/3 w-full flex items-center justify-center text-4xl grayscale opacity-30">❓</div>
+                                                <motion.div
+                                                    initial={{ y: 0 }}
+                                                    animate={{ y: "-50%" }}
+                                                    transition={{ repeat: Infinity, duration: 0.1, ease: "linear" }}
+                                                    className="absolute inset-0 flex flex-col items-center opacity-70 blur-[1px]"
+                                                >
+                                                    {/* Double the list for seamless loop */}
+                                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8].map((sId, i) => (
+                                                        <div key={i} className="h-1/3 w-full flex items-center justify-center">
+                                                            <SymbolIcon id={sId as any} className="text-3xl sm:text-5xl opacity-40 grayscale" />
+                                                        </div>
                                                     ))}
                                                 </motion.div>
                                             )}
@@ -145,13 +165,33 @@ export default function SlotsClient({ guildId, initialWallet }: { guildId: strin
                         </div>
                         <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5">
                             <button onClick={() => setBet(Math.max(1000, bet - 10000))} className="p-3 hover:bg-white/10 rounded-lg transition-colors"><Minus size={16} /></button>
-                            <div className="flex-1 text-center font-black text-xl text-yellow-400">{formatNumber(bet)}</div>
+                            <input
+                                type="text"
+                                value={betInput}
+                                onChange={handleBetChange}
+                                onBlur={() => setBetInput(bet.toString())}
+                                className="flex-1 bg-transparent text-center font-black text-xl text-yellow-400 outline-none w-20"
+                            />
                             <button onClick={() => setBet(bet + 10000)} className="p-3 hover:bg-white/10 rounded-lg transition-colors"><Plus size={16} /></button>
                         </div>
                         <div className="flex justify-between gap-2 mt-2">
                             {[1000, 20000, 50000, 100000, 500000].map(val => (
                                 <button key={val} onClick={() => setBet(val)} className="flex-1 py-1 bg-white/5 hover:bg-white/10 rounded text-[10px] sm:text-xs font-bold transition-colors">{formatNumber(val)}</button>
                             ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                            <button
+                                onClick={() => setBet(prev => prev + 500000)}
+                                className="py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-black text-emerald-400 transition-all border border-emerald-500/10 flex items-center justify-center gap-2"
+                            >
+                                <Plus size={12} /> 500K
+                            </button>
+                            <button
+                                onClick={() => setBet(prev => prev + 1000000)}
+                                className="py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[10px] font-black text-amber-400 transition-all border border-amber-500/10 flex items-center justify-center gap-2"
+                            >
+                                <Plus size={12} /> 1JT
+                            </button>
                         </div>
                     </div>
 

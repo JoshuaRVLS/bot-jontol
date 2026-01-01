@@ -26,23 +26,25 @@ export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
         id: "elite",
         name: "Special Case",
         cost: 500000,
-        description: "Premium tier. Min: Rp 75k - 250k (Restricted). Target: Classified (350k+).",
+        description: "Premium tier. Filler: Mil-Spec, Restricted. Target: Classified+.",
         weights: {
+            "mil-spec": 4000,
             "restricted": 4000,
-            "classified": 4500,
-            "covert": 1300,
-            "extraordinary": 200,
+            "classified": 1500,
+            "covert": 450,
+            "extraordinary": 50,
         }
     },
     sultan: {
         id: "sultan",
         name: "Omega Case",
         cost: 2000000,
-        description: "God-tier. Min: Rp 350k - 1.1M (Classified). Target: Covert (2M+).",
+        description: "God-tier. Filler: Restricted. Target: Classified, Covert+.",
         weights: {
+            "restricted": 4000,
             "classified": 5000,
-            "covert": 4000,
-            "extraordinary": 1000,
+            "covert": 900,
+            "extraordinary": 100,
         }
     },
     godtier: {
@@ -76,8 +78,8 @@ export const getWeightedSkin = (skins: any[], caseType: CaseType = "highroller",
     if (weights["covert"]) weights["covert"] = Math.floor(weights["covert"] * pityMultiplier);
     if (weights["extraordinary"]) weights["extraordinary"] = Math.floor(weights["extraordinary"] * pityMultiplier);
 
-    // Apply Streak Multiplier
-    const highTiers = ["restricted", "classified", "covert", "extraordinary"];
+    // Apply Streak Multiplier (Boost only for real wins)
+    const highTiers = ["classified", "covert", "extraordinary"];
     highTiers.forEach(tier => {
         if (weights[tier]) {
             weights[tier] = Math.floor(weights[tier] * streakMultiplier);

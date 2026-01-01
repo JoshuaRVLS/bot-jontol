@@ -17,7 +17,7 @@ import {
     finishTypingRaceAction,
     leaveTypingRoomAction
 } from "@/app/actions/typing";
-import { formatRupiah, formatNumber } from "@/lib/format";
+import { formatRupiah, formatNumber, parseBet } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 
@@ -86,6 +86,19 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
     const [rooms, setRooms] = useState<any[]>([]);
     const [activeRoom, setActiveRoom] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [customBet, setCustomBet] = useState(10000);
+    const [customBetInput, setCustomBetInput] = useState("10000");
+
+    useEffect(() => {
+        setCustomBetInput(customBet.toString());
+    }, [customBet]);
+
+    const handleCustomBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setCustomBetInput(val);
+        const parsed = parseBet(val);
+        if (parsed > 0) setCustomBet(parsed);
+    };
 
     // Game State
     const [typedText, setTypedText] = useState("");
@@ -471,19 +484,37 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
                         </div>
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-2">Select Bet Amount</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {[10000, 50000, 100000, 500000].map(val => (
-                                        <button key={val} onClick={() => handleCreateRoom(val)} className="py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-95 flex flex-col items-center gap-1">
-                                            <span className="text-yellow-400 font-black italic">{formatNumber(val)}</span>
-                                            <span className="text-[8px] text-white/20 uppercase tracking-[0.2em]">RUPIAH</span>
-                                        </button>
-                                    ))}
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 pl-2">Custom Bet Amount</label>
+                                <div className="relative group">
+                                    <input
+                                        type="text"
+                                        value={customBetInput}
+                                        onChange={handleCustomBetChange}
+                                        onBlur={() => setCustomBetInput(customBet.toString())}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-2xl font-black text-yellow-400 italic outline-none focus:border-purple-500/50 transition-all focus:shadow-[0_0_30px_rgba(168,85,247,0.1)]"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <button
+                                        onClick={() => setCustomBet(prev => prev + 500000)}
+                                        className="py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-black text-emerald-400 transition-all border border-emerald-500/10 flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={12} /> 500K
+                                    </button>
+                                    <button
+                                        onClick={() => setCustomBet(prev => prev + 1000000)}
+                                        className="py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[10px] font-black text-amber-400 transition-all border border-amber-500/10 flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={12} /> 1JT
+                                    </button>
                                 </div>
                             </div>
-                            <button className="w-full py-4 bg-white text-black rounded-2xl font-black italic tracking-widest text-lg hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 group">
-                                <Settings2 size={20} className="group-hover:rotate-180 transition-transform duration-500" />
-                                CUSTOM GAME
+                            <button
+                                onClick={() => handleCreateRoom(customBet)}
+                                className="w-full py-4 bg-white text-black rounded-2xl font-black italic tracking-widest text-lg hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 group"
+                            >
+                                <Play size={20} className="fill-current" />
+                                BIARKAN BALAPAN DIMULAI
                             </button>
                         </div>
                     </div>

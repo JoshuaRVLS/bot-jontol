@@ -40,3 +40,29 @@ export const formatNumber = (num: number): string => {
 export const formatFullRupiah = (num: number): string => {
     return `Rp ${num.toLocaleString("id-ID")}`;
 };
+
+export const parseBet = (input: string): number => {
+    const cleanInput = input.toLowerCase().replace(/,/g, ".").replace(/[^0-9.rbjmtk]/g, "");
+    if (!cleanInput) return 0;
+
+    let multiplier = 1;
+    let numericPart = cleanInput;
+
+    if (cleanInput.endsWith("rb") || cleanInput.endsWith("k")) {
+        multiplier = 1_000;
+        numericPart = cleanInput.slice(0, -2);
+        if (cleanInput.endsWith("k")) numericPart = cleanInput.slice(0, -1);
+    } else if (cleanInput.endsWith("jt")) {
+        multiplier = 1_000_000;
+        numericPart = cleanInput.slice(0, -2);
+    } else if (cleanInput.endsWith("m")) {
+        multiplier = 1_000_000_000;
+        numericPart = cleanInput.slice(0, -1);
+    } else if (cleanInput.endsWith("t")) {
+        multiplier = 1_000_000_000_000;
+        numericPart = cleanInput.slice(0, -1);
+    }
+
+    const val = parseFloat(numericPart);
+    return isNaN(val) ? 0 : Math.floor(val * multiplier);
+};

@@ -17,7 +17,7 @@ import {
     Wallet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, parseBet } from "@/lib/format";
 import { useToast } from "@/components/ui/Toast";
 import {
     createSuitRoomAction,
@@ -82,7 +82,19 @@ export default function SuitClient({
     const [joining, setJoining] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [createBet, setCreateBet] = useState(50000);
+    const [createBetInput, setCreateBetInput] = useState("50000");
     const [isPrivate, setIsPrivate] = useState(false);
+
+    useEffect(() => {
+        setCreateBetInput(createBet.toString());
+    }, [createBet]);
+
+    const handleCreateBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setCreateBetInput(val);
+        const parsed = parseBet(val);
+        if (parsed > 0) setCreateBet(parsed);
+    };
 
     const fetchRooms = useCallback(async () => {
         const result = await getSuitRoomsAction(guildId);
@@ -507,9 +519,10 @@ export default function SuitClient({
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 block ml-4">JUMLAH BET (IDR)</label>
                                         <div className="relative group">
                                             <input
-                                                type="number"
-                                                value={createBet}
-                                                onChange={(e) => setCreateBet(parseInt(e.target.value) || 0)}
+                                                type="text"
+                                                value={createBetInput}
+                                                onChange={handleCreateBetChange}
+                                                onBlur={() => setCreateBetInput(createBet.toString())}
                                                 className="w-full bg-white/5 border border-white/10 rounded-[28px] py-6 px-10 text-3xl font-black text-white italic outline-none focus:border-red-500/50 transition-all focus:shadow-[0_0_30px_rgba(239,68,68,0.1)]"
                                             />
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center opacity-0 group-focus-within:opacity-100 transition-opacity">
@@ -529,6 +542,18 @@ export default function SuitClient({
                                                     {formatNumber(val)}
                                                 </button>
                                             ))}
+                                            <button
+                                                onClick={() => setCreateBet(prev => prev + 500000)}
+                                                className="px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/10"
+                                            >
+                                                +500K
+                                            </button>
+                                            <button
+                                                onClick={() => setCreateBet(prev => prev + 1000000)}
+                                                className="px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/10"
+                                            >
+                                                +1JT
+                                            </button>
                                         </div>
                                     </div>
 
