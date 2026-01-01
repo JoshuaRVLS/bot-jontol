@@ -24,7 +24,7 @@ export const UserGachaEditor = () => {
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [config, setConfig] = useState<any>({});
     const [isSaving, setIsSaving] = useState(false);
-    const [activeCase, setActiveCase] = useState<CaseType>("highroller");
+    const [activeCase, setActiveCase] = useState<CaseType>("elite");
     const { toast } = useToast();
 
     const handleSearch = async () => {

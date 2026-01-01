@@ -316,14 +316,14 @@ export const BattleLobby = ({
 
                                 {/* Crate Count */}
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Jumlah Case</label>
-                                    <div className="flex gap-2">
-                                        {[1, 3, 5, 10].map((n) => (
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Jumlah Case (Max 100)</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {[1, 5, 10, 25, 50, 100].map((n) => (
                                             <button
                                                 key={n}
                                                 onClick={() => setNewRoom(prev => ({ ...prev, crateCount: n }))}
                                                 className={cn(
-                                                    "flex-1 py-3 rounded-xl font-black text-sm transition-all",
+                                                    "px-4 py-3 rounded-xl font-black text-sm transition-all",
                                                     newRoom.crateCount === n
                                                         ? "bg-red-500 text-white"
                                                         : "bg-white/5 border border-white/10 hover:bg-white/10"
@@ -333,6 +333,18 @@ export const BattleLobby = ({
                                             </button>
                                         ))}
                                     </div>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        value={newRoom.crateCount}
+                                        onChange={(e) => {
+                                            const val = Math.min(100, Math.max(1, parseInt(e.target.value) || 1));
+                                            setNewRoom(prev => ({ ...prev, crateCount: val }));
+                                        }}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-bold text-center focus:outline-none focus:border-red-500"
+                                        placeholder="Custom (1-100)"
+                                    />
                                 </div>
 
                                 {/* Max Players */}

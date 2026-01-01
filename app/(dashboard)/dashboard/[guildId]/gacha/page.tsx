@@ -52,8 +52,8 @@ export default async function GachaPage({ params }: { params: Promise<{ guildId:
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                {Object.values(CASE_CONFIGS).map((config) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {Object.values(CASE_CONFIGS).filter(c => c.id !== "highroller").map((config) => (
                     <CaseCard key={config.id} config={config} guildId={guildId} />
                 ))}
             </div>
