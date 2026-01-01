@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocket } from "@/components/SocketProvider";
-import { executeBattleAction, startBattleAction, leaveBattleRoomAction } from "@/app/actions/battle";
+import { executeBattleAction, startBattleAction, leaveBattleRoomAction, joinBattleRoomAction, toggleReadyAction } from "@/app/actions/battle";
 import { CASE_CONFIGS, CaseType } from "@/lib/csgo";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
@@ -251,38 +251,60 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
     }, [socket, room.id, currentUser.id, currentUser.name, guildId, router, handleHostExecution, startAnimationSequence]);
 
 
-    const handleToggleReady = () => {
-        if (!socket || !isParticipant) return;
-        socket.emit("update_room", {
-            roomId: room.id,
-            room: {
-                ...room,
-                participants: room.participants.map(p =>
-                    p.id === currentUser.id ? { ...p, ready: !p.ready } : p
-                )
-            }
-        });
+    const handleToggleReady = async () => {
+        if (!isParticipant) return;
 
-        socket.emit("battle_room_updated", {
-            ...room,
-            participants: room.participants.map(p =>
-                p.id === currentUser.id ? { ...p, ready: !p.ready } : p
-            )
-        });
+        const res = await toggleReadyAction(room.id);
+        if (res.success && res.room) {
+            const updatedRoom: BattleRoom = {
+                id: res.room.id,
+                roomCode: res.room.roomCode,
+                hostId: res.room.hostId,
+                hostName: res.room.hostName,
+                caseType: res.room.caseType,
+                crateCount: res.room.crateCount,
+                maxPlayers: res.room.maxPlayers,
+                isPrivate: res.room.isPrivate,
+                crazyMode: res.room.crazyMode,
+                isTeamMode: res.room.isTeamMode,
+                status: res.room.status,
+                participants: res.room.participants as unknown as Participant[],
+                results: res.room.results as unknown as BattleResult[] | undefined,
+                winnerId: res.room.winnerId ?? undefined
+            };
+            setRoom(updatedRoom);
+            socket?.emit("update_room", { roomId: room.id, room: updatedRoom });
+            socket?.emit("battle_room_updated", updatedRoom);
+        }
     };
 
-    const handleJoin = () => {
-        if (!socket || isParticipant || room.participants.length >= room.maxPlayers) return;
-        const updatedParticipants = [...room.participants, {
-            id: currentUser.id,
-            name: currentUser.name,
-            avatar: currentUser.avatar,
-            ready: true
-        }];
-        socket.emit("update_room", {
-            room: { ...room, participants: updatedParticipants }
-        });
-        socket.emit("battle_room_updated", { ...room, participants: updatedParticipants });
+    const handleJoin = async () => {
+        if (isParticipant || room.participants.length >= room.maxPlayers) return;
+
+        const res = await joinBattleRoomAction(room.id);
+        if (res.success && res.room) {
+            const updatedRoom: BattleRoom = {
+                id: res.room.id,
+                roomCode: res.room.roomCode,
+                hostId: res.room.hostId,
+                hostName: res.room.hostName,
+                caseType: res.room.caseType,
+                crateCount: res.room.crateCount,
+                maxPlayers: res.room.maxPlayers,
+                isPrivate: res.room.isPrivate,
+                crazyMode: res.room.crazyMode,
+                isTeamMode: res.room.isTeamMode,
+                status: res.room.status,
+                participants: res.room.participants as unknown as Participant[],
+                results: res.room.results as unknown as BattleResult[] | undefined,
+                winnerId: res.room.winnerId ?? undefined
+            };
+            setRoom(updatedRoom);
+            socket?.emit("update_room", { roomId: room.id, room: updatedRoom });
+            socket?.emit("battle_room_updated", updatedRoom);
+        } else if (res.error) {
+            alert(res.error);
+        }
     };
 
     const handleStartBattle = async () => {

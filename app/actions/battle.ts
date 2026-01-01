@@ -207,6 +207,21 @@ export async function createBattleRoomAction(data: {
     if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
 
     try {
+        const caseConfig = CASE_CONFIGS[data.caseType as CaseType];
+        if (!caseConfig) return { success: false, error: "Case type tidak valid!" };
+
+        const entryCost = caseConfig.cost * data.crateCount;
+
+        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        if (!user || user.wallet < entryCost) {
+            return { success: false, error: `Saldo tidak cukup! Butuh Rp ${entryCost.toLocaleString()}` };
+        }
+
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { wallet: { decrement: entryCost } }
+        });
+
         const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         const room = await prisma.battleRoom.create({
             data: {
@@ -270,19 +285,27 @@ export async function leaveBattleRoomAction(roomId: string) {
 
         const participants = room.participants as any[];
         const isHost = room.hostId === session.user.id;
+        const isParticipant = participants.some(p => p.id === session.user.id);
 
-        // Condition 1: If host leaves during 'waiting', delete the entire room
+        const caseConfig = CASE_CONFIGS[room.caseType as CaseType];
+        const entryCost = caseConfig ? caseConfig.cost * room.crateCount : 0;
+
+        if (room.status === "waiting" && isParticipant && entryCost > 0) {
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { wallet: { increment: entryCost } }
+            });
+        }
+
         if (isHost && room.status === "waiting") {
             await prisma.battleRoom.delete({ where: { id: roomId } });
             revalidatePath("/dashboard/[guildId]/battle", "page");
             return { success: true, action: "removed" };
         }
 
-        // Condition 2: If participant leaves, remove them from list
         const updatedParticipants = participants.filter(p => p.id !== session.user.id);
 
         if (updatedParticipants.length === 0) {
-            // Room is empty, delete it
             await prisma.battleRoom.delete({ where: { id: roomId } });
             revalidatePath("/dashboard/[guildId]/battle", "page");
             return { success: true, action: "removed" };
@@ -300,6 +323,89 @@ export async function leaveBattleRoomAction(roomId: string) {
     } catch (error) {
         console.error("[Battle Leave] Error:", error);
         return { success: false, error: "Gagal kabur dari room." };
+    }
+}
+
+export async function joinBattleRoomAction(roomId: string) {
+    const session: any = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
+
+    try {
+        const room = await prisma.battleRoom.findUnique({ where: { id: roomId } });
+        if (!room) return { success: false, error: "Room gak ketemu!" };
+        if (room.status !== "waiting") return { success: false, error: "Battle sudah dimulai atau selesai!" };
+
+        const participants = room.participants as any[];
+
+        if (participants.some(p => p.id === session.user.id)) {
+            return { success: true, room, message: "Sudah bergabung." };
+        }
+
+        if (participants.length >= room.maxPlayers) {
+            return { success: false, error: "Room sudah penuh!" };
+        }
+
+        const caseConfig = CASE_CONFIGS[room.caseType as CaseType];
+        const entryCost = caseConfig.cost * room.crateCount;
+
+        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        if (!user || user.wallet < entryCost) {
+            return { success: false, error: `Saldo tidak cukup! Butuh ${entryCost.toLocaleString()}` };
+        }
+
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { wallet: { decrement: entryCost } }
+        });
+
+        const newParticipant = {
+            id: session.user.id,
+            name: session.user.name || "Anonymous",
+            avatar: session.user.image,
+            ready: true
+        };
+
+        const updatedRoom = await prisma.battleRoom.update({
+            where: { id: roomId },
+            data: {
+                participants: [...participants, newParticipant]
+            }
+        });
+
+        revalidatePath("/dashboard/[guildId]/battle", "page");
+        return { success: true, room: updatedRoom };
+    } catch (error) {
+        console.error("[Battle Join] Error:", error);
+        return { success: false, error: "Gagal join room." };
+    }
+}
+
+export async function toggleReadyAction(roomId: string) {
+    const session: any = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "Silakan login terlebih dahulu." };
+
+    try {
+        const room = await prisma.battleRoom.findUnique({ where: { id: roomId } });
+        if (!room) return { success: false, error: "Room gak ketemu!" };
+
+        const participants = room.participants as any[];
+        const participantIndex = participants.findIndex(p => p.id === session.user.id);
+
+        if (participantIndex === -1) {
+            return { success: false, error: "Kamu bukan peserta room ini!" };
+        }
+
+        participants[participantIndex].ready = !participants[participantIndex].ready;
+
+        const updatedRoom = await prisma.battleRoom.update({
+            where: { id: roomId },
+            data: { participants }
+        });
+
+        return { success: true, room: updatedRoom };
+    } catch (error) {
+        console.error("[Battle Ready] Error:", error);
+        return { success: false, error: "Gagal toggle ready." };
     }
 }
 
