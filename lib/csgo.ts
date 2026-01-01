@@ -69,18 +69,19 @@ export const getWeightedSkin = (
 ) => {
     let weights = customWeights?.[caseType] ? { ...customWeights[caseType] } : { ...CASE_CONFIGS[caseType].weights };
 
-    // Crazy Mode: Invert weights - rare items become much more common
+    // Crazy Mode: Boost common items, reduce rare items (lowest value wins)
     if (crazyMode) {
-        const entries = Object.entries(weights);
-        const totalOriginal = entries.reduce((sum, [, w]) => sum + (w as number), 0);
-
-        // Invert weights: lowest becomes highest
-        const invertedWeights: Record<string, number> = {};
-        for (const [rarity, weight] of entries) {
-            // Invert relative to total, then boost rare items significantly
-            invertedWeights[rarity] = Math.floor(totalOriginal / (weight as number) * 100);
+        const boostedWeights: Record<string, number> = {};
+        for (const [rarity, weight] of Object.entries(weights)) {
+            if (rarity === "mil-spec" || rarity === "restricted") {
+                boostedWeights[rarity] = Math.floor((weight as number) * 2);
+            } else if (rarity === "classified") {
+                boostedWeights[rarity] = Math.floor((weight as number) * 0.8);
+            } else {
+                boostedWeights[rarity] = Math.floor((weight as number) * 0.3);
+            }
         }
-        weights = invertedWeights;
+        weights = boostedWeights;
     }
 
     const pityMultiplier = 1 + (pityCount * 0.08);
