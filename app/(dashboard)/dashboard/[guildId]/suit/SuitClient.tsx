@@ -57,7 +57,7 @@ const CHOICES = [
     { id: "kertas", label: "KERTAS", emoji: "📄", beats: "batu" }
 ];
 
-const SOCKET_URL = "http://localhost:8000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000";
 
 export default function SuitClient({
     guildId,
