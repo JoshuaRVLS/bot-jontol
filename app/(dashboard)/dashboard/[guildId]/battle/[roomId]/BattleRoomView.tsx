@@ -13,14 +13,19 @@ import {
     CheckCheck,
     Zap,
     History,
-    Dices
+    Dices,
+    X,
+    DollarSign,
+    RotateCcw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocket } from "@/components/SocketProvider";
 import { executeBattleAction, startBattleAction, leaveBattleRoomAction, joinBattleRoomAction, toggleReadyAction } from "@/app/actions/battle";
+import { sellSkinsAction } from "@/app/actions/gacha";
 import { CASE_CONFIGS, CaseType } from "@/lib/csgo";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
+import { useToast } from "@/components/ui/Toast";
 
 interface Participant {
     id: string;
@@ -73,7 +78,16 @@ interface BattleRoomViewProps {
     };
 }
 
-// Carousel Component for single opening
+// Placeholder skin images for rolling animation
+const PLACEHOLDER_SKINS = [
+    "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV09-5lpKKqPrxN7LEm1Rd6dd2j6fE9Nmi2VWx_UVkYj31JdfGdgQ6YQvR81O3xLvq0JO-7ZSazHFivyUm7HiOykOzgUpLbOc-1qeAHELamVdKGw/360fx360f",
+    "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITCmX5d_MR6j_v--YXygED6_0VvZGz7LdLBdA4_MFyGqQTvxO_ohZO_7JucyXA37yQt4HvUyxOwhh1OaLNxxavJFBLQBqNSXP_VoJwWMQ/360fx360f",
+    "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJK9cyzhr-KmsjwPKvBmm5u5cB1g_zMu4qm2VC1_hVlYjulJISUcwU9MF7TqADowry6jMC67puczXQ27HI8pSGKALb8Sw/360fx360f",
+    "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf3qr3czxb49KzgL-DjsjwN6vQglRc7cF4n-T--Y3nj1H6rhVlYT-gctKTJl46aQ7SqVPtwO7og8TpuM7LySRlvCMq4n7bnEex0xhKbeNrx_fPFg/360fx360f",
+    "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-jxcDhnwMzFcDoV09q_hoWZkuHLPr7Vn35cpsYh2L2X99X23gaw_BBuYTv0Jo-XdQc8Yl-C-Ae5lOy9gp-1uZXNzSNl6D5iuygJxZjWng/360fx360f",
+];
+
+// Carousel Component with rolling animation
 const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRolling: boolean, roundIndex: number }) => {
     if (!skin && !isRolling) return (
         <div className="w-full aspect-square bg-white/5 rounded-2xl border border-dashed border-white/10 flex items-center justify-center">
@@ -82,7 +96,7 @@ const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRo
     );
 
     return (
-        <div className="relative w-full aspect-square glass-card rounded-2xl border-white/5 overflow-hidden flex flex-col items-center justify-center p-2 sm:p-4">
+        <div className="relative w-full aspect-square glass-card rounded-2xl border-white/5 overflow-hidden">
             <AnimatePresence mode="wait">
                 {isRolling ? (
                     <motion.div
@@ -90,35 +104,64 @@ const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRo
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex flex-col items-center gap-1 sm:gap-3"
+                        className="absolute inset-0 flex flex-col"
                     >
-                        <motion.div
-                            animate={{
-                                rotateY: [0, 360],
-                                scale: [1, 1.1, 1]
-                            }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                            <Dices size={30} className="text-white/20 sm:w-10 sm:h-10" />
-                        </motion.div>
-                        <span className="text-[7px] sm:text-[8px] font-black text-muted-foreground uppercase animate-pulse">Rolling...</span>
+                        {/* Rolling strip */}
+                        <div className="flex-1 relative overflow-hidden">
+                            <motion.div
+                                className="absolute inset-0 flex flex-col"
+                                animate={{ y: [0, -500] }}
+                                transition={{
+                                    duration: 1.8,
+                                    ease: [0.25, 0.1, 0.25, 1],
+                                    repeat: Infinity,
+                                    repeatType: "loop"
+                                }}
+                            >
+                                {[...PLACEHOLDER_SKINS, ...PLACEHOLDER_SKINS, ...PLACEHOLDER_SKINS].map((img, i) => (
+                                    <div key={i} className="flex-shrink-0 h-[100px] flex items-center justify-center p-2">
+                                        <img src={img} alt="" className="h-full w-auto object-contain opacity-60" />
+                                    </div>
+                                ))}
+                            </motion.div>
+
+                            {/* Center indicator */}
+                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] z-10" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
+                        </div>
+
+                        {/* Rolling text */}
+                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                            <span className="text-[8px] font-black text-red-500 uppercase tracking-widest animate-pulse">Rolling...</span>
+                        </div>
                     </motion.div>
                 ) : (
                     <motion.div
                         key="reveal"
-                        initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
-                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                        className="flex flex-col items-center text-center w-full h-full justify-between"
+                        initial={{ scale: 1.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                        className="flex flex-col items-center text-center w-full h-full justify-between p-2 sm:p-4"
                     >
                         <div className="relative w-full h-2/3 flex items-center justify-center">
                             <motion.img
                                 src={skin!.image}
                                 alt={skin!.name}
-                                className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
-                                animate={{ y: [0, -3, 0] }}
-                                transition={{ duration: 3, repeat: Infinity }}
+                                className="w-full h-full object-contain drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
+                                initial={{ rotate: -5, scale: 0.8 }}
+                                animate={{ rotate: 0, scale: 1, y: [0, -3, 0] }}
+                                transition={{
+                                    rotate: { duration: 0.3 },
+                                    scale: { duration: 0.3 },
+                                    y: { duration: 3, repeat: Infinity, delay: 0.3 }
+                                }}
                             />
-                            <div className="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none" />
+                            <motion.div
+                                initial={{ opacity: 1 }}
+                                animate={{ opacity: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="absolute inset-0 bg-white/30 pointer-events-none"
+                            />
                         </div>
                         <div className="mt-1 sm:mt-2 w-full">
                             <p className="text-[8px] sm:text-[10px] font-black leading-tight line-clamp-2 uppercase whitespace-normal h-5 sm:h-6 flex items-center justify-center px-0.5 sm:px-1">
@@ -128,8 +171,10 @@ const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRo
                                 {formatRupiah(skin!.marketPrice)}
                             </p>
                         </div>
-                        <div
-                            className="absolute bottom-0 left-0 w-full h-0.5 sm:h-1"
+                        <motion.div
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            className="absolute bottom-0 left-0 w-full h-1 origin-left"
                             style={{ backgroundColor: skin!.rarity?.color || "#5865f2" }}
                         />
                     </motion.div>
@@ -161,6 +206,8 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
     const [room, setRoom] = useState<BattleRoom>(initialRoom);
     const [isStarting, setIsStarting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [showResultModal, setShowResultModal] = useState(false);
+    const [isSelling, setIsSelling] = useState(false);
 
     // Animation State
     const [battleResults, setBattleResults] = useState<BattleResult[] | null>(null);
@@ -169,10 +216,12 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
 
     const { socket } = useSocket();
     const router = useRouter();
+    const { toast } = useToast();
 
     const isHost = currentUser.id === room.hostId;
     const isParticipant = room.participants.some(p => p.id === currentUser.id);
     const caseConfig = CASE_CONFIGS[room.caseType as CaseType];
+    const isWinner = room.status === "finished" && room.winnerId === currentUser.id;
 
     const handleHostExecution = useCallback(async () => {
         if (!isHost) return;
@@ -193,31 +242,35 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
         for (let i = 0; i < room.crateCount; i++) {
             setCurrentRound(i);
             setIsRollingRound(true);
-            await new Promise(r => setTimeout(r, 2000)); // Roll time
+            await new Promise(r => setTimeout(r, 2000));
             setIsRollingRound(false);
-            await new Promise(r => setTimeout(r, 1500)); // Reveal wait
+            await new Promise(r => setTimeout(r, 1500));
         }
+
+        const winnerId = (() => {
+            if (room.isTeamMode && results.length === 4) {
+                const t1Val = results[0].totalValue + results[2].totalValue;
+                const t2Val = results[1].totalValue + results[3].totalValue;
+                const t1Wins = room.crazyMode ? t1Val < t2Val : t1Val > t2Val;
+                return t1Wins ? results[0].participantId : results[1].participantId;
+            }
+            return results.reduce((best, r) => {
+                if (room.crazyMode) {
+                    return r.totalValue < best.totalValue ? r : best;
+                }
+                return r.totalValue > best.totalValue ? r : best;
+            }).participantId;
+        })();
 
         setRoom(prev => ({
             ...prev,
             status: "finished",
             results: results,
-            winnerId: (() => {
-                if (prev.isTeamMode && results.length === 4) {
-                    const t1Val = results[0].totalValue + results[2].totalValue;
-                    const t2Val = results[1].totalValue + results[3].totalValue;
-                    const t1Wins = prev.crazyMode ? t1Val < t2Val : t1Val > t2Val;
-                    return t1Wins ? results[0].participantId : results[1].participantId;
-                }
-                return results.reduce((best, r) => {
-                    if (prev.crazyMode) {
-                        return r.totalValue < best.totalValue ? r : best;
-                    }
-                    return r.totalValue > best.totalValue ? r : best;
-                }).participantId;
-            })()
+            winnerId
         }));
-    }, [room.crateCount]);
+
+        setTimeout(() => setShowResultModal(true), 500);
+    }, [room.crateCount, room.isTeamMode, room.crazyMode]);
 
     // Initialize/Sync
     useEffect(() => {
@@ -353,8 +406,8 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
 
     return (
         <div className="max-w-6xl mx-auto space-y-6 pb-20 relative">
-            {/* Header Sticky */}
-            <div className="flex items-center justify-between bg-background/80 backdrop-blur-xl p-3 sm:p-4 rounded-2xl sm:rounded-3xl sticky top-20 z-30 border border-white/5 shadow-2xl">
+            {/* Header Bar - Not Sticky */}
+            <div className="flex items-center justify-between bg-background/80 backdrop-blur-xl p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-white/5 shadow-2xl">
                 <button onClick={handleLeave} className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors px-2 sm:px-4 py-2 hover:bg-white/5 rounded-xl">
                     <ArrowLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
                     <span className="font-bold text-[10px] sm:text-xs uppercase tracking-widest italic tracking-tighter">KABURRR</span>
@@ -676,6 +729,120 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                     room.status === "finished" ? "bg-amber-500/10" : "bg-indigo-500/5"
                 )} />
             </div>
+
+            {/* Result Modal */}
+            <AnimatePresence>
+                {showResultModal && room.status === "finished" && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                            onClick={() => setShowResultModal(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+                            className="relative w-full max-w-md glass-card rounded-[40px] p-8 border border-white/10 shadow-[0_0_60px_rgba(251,191,36,0.2)]"
+                        >
+                            <button
+                                onClick={() => setShowResultModal(false)}
+                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div className="text-center space-y-6">
+                                {isWinner ? (
+                                    <>
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                                            transition={{ type: "spring", delay: 0.2 }}
+                                            className="w-24 h-24 mx-auto rounded-full bg-amber-500/20 flex items-center justify-center"
+                                        >
+                                            <Crown size={48} className="text-amber-500" />
+                                        </motion.div>
+                                        <div>
+                                            <h2 className="text-3xl font-black uppercase italic text-amber-500">KAMU MENANG!</h2>
+                                            <p className="text-sm text-muted-foreground mt-2">Semua skin sekarang milikmu</p>
+                                        </div>
+
+                                        {battleResults && (
+                                            <div className="bg-white/5 rounded-2xl p-4 space-y-2">
+                                                <p className="text-[10px] font-black uppercase text-muted-foreground">Total Hadiah</p>
+                                                <p className="text-2xl font-black text-emerald-400">
+                                                    {formatRupiah(battleResults.reduce((sum, r) => sum + r.totalValue, 0))}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {battleResults.reduce((sum, r) => sum + r.skins.length, 0)} skins
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-3">
+                                            <button
+                                                onClick={async () => {
+                                                    if (!battleResults) return;
+                                                    setIsSelling(true);
+                                                    const allInstanceIds = battleResults.flatMap(r => r.skins.map(s => s.instanceId));
+                                                    const res = await sellSkinsAction(allInstanceIds);
+                                                    setIsSelling(false);
+                                                    if (res.success) {
+                                                        toast(`Berhasil jual semua skin! +${formatRupiah(res.totalValue || 0)}`, "success");
+                                                        setShowResultModal(false);
+                                                    } else {
+                                                        toast(res.error || "Gagal jual skin", "error");
+                                                    }
+                                                }}
+                                                disabled={isSelling}
+                                                className="w-full py-4 rounded-2xl bg-emerald-500 text-white font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {isSelling ? <Loader2 size={16} className="animate-spin" /> : <DollarSign size={16} />}
+                                                Jual Semua Skin
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    setShowResultModal(false);
+                                                    router.push(`/dashboard/${guildId}/battle`);
+                                                }}
+                                                className="w-full py-4 rounded-2xl bg-indigo-500 text-white font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <RotateCcw size={16} />
+                                                Main Lagi
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-24 h-24 mx-auto rounded-full bg-red-500/20 flex items-center justify-center">
+                                            <Swords size={48} className="text-red-500" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-3xl font-black uppercase italic text-red-500">KALAH!</h2>
+                                            <p className="text-sm text-muted-foreground mt-2">Semua skinmu hilang...</p>
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                setShowResultModal(false);
+                                                router.push(`/dashboard/${guildId}/battle`);
+                                            }}
+                                            className="w-full py-4 rounded-2xl bg-white/10 border border-white/10 text-white font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <RotateCcw size={16} />
+                                            Coba Lagi
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

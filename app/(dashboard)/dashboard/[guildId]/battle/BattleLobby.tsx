@@ -46,7 +46,6 @@ interface BattleLobbyProps {
 }
 
 const CASE_OPTIONS: { id: CaseType; label: string; color: string }[] = [
-    { id: "highroller", label: "Standard (100K)", color: "bg-purple-500" },
     { id: "elite", label: "Special (500K)", color: "bg-red-500" },
     { id: "sultan", label: "Omega (2JT)", color: "bg-amber-500" },
     { id: "godtier", label: "Divine (5Miliar)", color: "bg-indigo-500" },
@@ -62,7 +61,7 @@ export const BattleLobby = ({
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [newRoom, setNewRoom] = useState({
-        caseType: "highroller" as CaseType,
+        caseType: "elite" as CaseType,
         crateCount: 1,
         maxPlayers: 2,
         isPrivate: false,
