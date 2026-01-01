@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocket } from "@/components/SocketProvider";
-import { createBattleRoomAction } from "@/app/actions/battle";
+import { createBattleRoomAction, getBattleRoomsAction } from "@/app/actions/battle";
 import { CASE_CONFIGS, CaseType } from "@/lib/csgo";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +71,18 @@ export const BattleLobby = ({
     const { socket, isConnected } = useSocket();
     const router = useRouter();
 
+    const refreshRooms = async () => {
+        const res = await getBattleRoomsAction(guildId);
+        if (res.success && res.rooms) {
+            setRooms(res.rooms as unknown as BattleRoom[]);
+        }
+    };
+
+    useEffect(() => {
+        const interval = setInterval(refreshRooms, 10000);
+        return () => clearInterval(interval);
+    }, [guildId]);
+
     useEffect(() => {
         if (!socket) return;
 
@@ -82,7 +94,7 @@ export const BattleLobby = ({
 
         socket.on("room_list_update", (data: { action: string; room?: BattleRoom; roomId?: string }) => {
             if (data.action === "add" && data.room) {
-                setRooms(prev => [data.room!, ...prev]);
+                setRooms(prev => [data.room!, ...prev.filter(r => r.id !== data.room!.id)]);
             } else if (data.action === "update" && data.room) {
                 setRooms(prev => prev.map(r => r.id === data.room!.id ? data.room! : r));
             } else if (data.action === "remove" && data.roomId) {
@@ -90,9 +102,23 @@ export const BattleLobby = ({
             }
         });
 
+        socket.on("battle_room_updated", (room: BattleRoom) => {
+            setRooms(prev => {
+                const exists = prev.some(r => r.id === room.id);
+                if (exists) {
+                    return prev.map(r => r.id === room.id ? room : r);
+                }
+                if (!room.isPrivate && (room.status === "waiting" || room.status === "running")) {
+                    return [room, ...prev];
+                }
+                return prev;
+            });
+        });
+
         return () => {
             socket.off("room_list");
             socket.off("room_list_update");
+            socket.off("battle_room_updated");
         };
     }, [socket, guildId]);
 

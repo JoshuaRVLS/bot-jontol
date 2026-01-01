@@ -23,11 +23,11 @@ export default async function BattlePage({
     const initialRooms = await prisma.battleRoom.findMany({
         where: {
             guildId,
-            status: "waiting",
+            status: { in: ["waiting", "running"] },
             isPrivate: false
         },
         orderBy: { createdAt: "desc" },
-        take: 20
+        take: 50
     });
 
     return (
