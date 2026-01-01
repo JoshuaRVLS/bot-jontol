@@ -59,18 +59,37 @@ export const CASE_CONFIGS: Record<CaseType, CaseConfig> = {
     }
 };
 
-export const getWeightedSkin = (skins: any[], caseType: CaseType = "highroller", pityCount: number = 0, customWeights?: any, streak: number = 0) => {
-    const weights = customWeights?.[caseType] ? { ...customWeights[caseType] } : { ...CASE_CONFIGS[caseType].weights };
+export const getWeightedSkin = (
+    skins: any[],
+    caseType: CaseType = "highroller",
+    pityCount: number = 0,
+    customWeights?: any,
+    streak: number = 0,
+    crazyMode: boolean = false
+) => {
+    let weights = customWeights?.[caseType] ? { ...customWeights[caseType] } : { ...CASE_CONFIGS[caseType].weights };
+
+    // Crazy Mode: Invert weights - rare items become much more common
+    if (crazyMode) {
+        const entries = Object.entries(weights);
+        const totalOriginal = entries.reduce((sum, [, w]) => sum + (w as number), 0);
+
+        // Invert weights: lowest becomes highest
+        const invertedWeights: Record<string, number> = {};
+        for (const [rarity, weight] of entries) {
+            // Invert relative to total, then boost rare items significantly
+            invertedWeights[rarity] = Math.floor(totalOriginal / (weight as number) * 100);
+        }
+        weights = invertedWeights;
+    }
 
     const pityMultiplier = 1 + (pityCount * 0.08);
 
-    // Streak Logic: Freshness vs Greed
+    // Streak Logic
     let streakMultiplier = 1;
     if (streak < 5) {
-        // Freshness Boost (Kasih menang dulu)
-        streakMultiplier = 1.3; // 30% boost chance
+        streakMultiplier = 1.3;
     } else if (streak >= 15) {
-        // Greed Penalty (Nafsu kalahin) - starts at 15
         const penaltyFactor = Math.min(0.7, (streak - 15) * 0.05);
         streakMultiplier = Math.max(0.3, 1 - penaltyFactor);
     }
@@ -78,7 +97,6 @@ export const getWeightedSkin = (skins: any[], caseType: CaseType = "highroller",
     if (weights["covert"]) weights["covert"] = Math.floor(weights["covert"] * pityMultiplier);
     if (weights["extraordinary"]) weights["extraordinary"] = Math.floor(weights["extraordinary"] * pityMultiplier);
 
-    // Apply Streak Multiplier (Boost only for real wins)
     const highTiers = ["classified", "covert", "extraordinary"];
     highTiers.forEach(tier => {
         if (weights[tier]) {

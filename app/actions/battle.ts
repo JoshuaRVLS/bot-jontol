@@ -53,14 +53,32 @@ export async function executeBattleAction(roomId: string) {
         const skinsCache = await getSkins();
         const results: { participantId: string; participantName: string; skins: any[]; totalValue: number }[] = [];
 
+        // Battle-specific boosted weights for better rare drops
+        const battleWeights: Record<string, Record<string, number>> = {
+            highroller: { "mil-spec": 3000, "restricted": 4000, "classified": 2200, "covert": 650, "extraordinary": 150 },
+            elite: { "mil-spec": 2500, "restricted": 4000, "classified": 2500, "covert": 800, "extraordinary": 200 },
+            sultan: { "restricted": 3000, "classified": 5000, "covert": 1500, "extraordinary": 500 },
+            godtier: { "covert": 3000, "extraordinary": 7000 }
+        };
+
+        const BATTLE_PRICE_MULTIPLIER = 2.0;
+
         for (const participant of participants) {
             const skins = [];
             let totalValue = 0;
 
             for (let i = 0; i < room.crateCount; i++) {
-                const rawSkin = getWeightedSkin(skinsCache || [], room.caseType as CaseType, 0);
+                const rawSkin = getWeightedSkin(
+                    skinsCache || [],
+                    room.caseType as CaseType,
+                    0,
+                    battleWeights,
+                    0,
+                    (room as any).crazyMode
+                );
                 const { float, wear } = getSkinFloat();
-                const marketPrice = getSkinPrice(rawSkin.rarity?.name || "Consumer Grade", float);
+                const basePrice = getSkinPrice(rawSkin.rarity?.name || "Consumer Grade", float);
+                const marketPrice = Math.floor(basePrice * BATTLE_PRICE_MULTIPLIER);
 
                 const skin = {
                     ...rawSkin,
