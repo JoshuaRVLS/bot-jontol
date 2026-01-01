@@ -82,7 +82,7 @@ async function getDynamicCommands() {
 }
 
 export default async function CommandsPage({ params }: { params: Promise<{ guildId: string }> }) {
-    const { guildId } = await params;
+    await params; // consume params but don't use guildId
     const session = await getServerSession(authOptions);
     if (!session) redirect("/");
 

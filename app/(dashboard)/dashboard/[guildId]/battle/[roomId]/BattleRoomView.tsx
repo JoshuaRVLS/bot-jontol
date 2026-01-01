@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
     Swords,
     Crown,
     Users,
-    Check,
     Play,
-    Trophy,
-    Eye,
     ArrowLeft,
     Loader2,
     Copy,
@@ -116,7 +113,7 @@ const SkinCarousel = ({ skin, isRolling, roundIndex }: { skin: Skin | null, isRo
                         <div className="relative w-full h-2/3 flex items-center justify-center">
                             <motion.img
                                 src={skin!.image}
-                                alt=""
+                                alt={skin!.name}
                                 className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
                                 animate={{ y: [0, -3, 0] }}
                                 transition={{ duration: 3, repeat: Infinity }}
@@ -177,7 +174,7 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
     const isParticipant = room.participants.some(p => p.id === currentUser.id);
     const caseConfig = CASE_CONFIGS[room.caseType as CaseType];
 
-    const handleHostExecution = async () => {
+    const handleHostExecution = useCallback(async () => {
         if (!isHost) return;
 
         const res = await executeBattleAction(room.id);
@@ -188,9 +185,9 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                 winnerId: res.winnerId
             });
         }
-    };
+    }, [isHost, room.id, socket]);
 
-    const startAnimationSequence = async (results: BattleResult[]) => {
+    const startAnimationSequence = useCallback(async (results: BattleResult[]) => {
         setRoom(prev => ({ ...prev, status: "running" }));
 
         for (let i = 0; i < room.crateCount; i++) {
@@ -220,7 +217,7 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                 }).participantId;
             })()
         }));
-    };
+    }, [room.crateCount]);
 
     // Initialize/Sync
     useEffect(() => {
@@ -251,7 +248,7 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
             socket.off("battle_start");
             socket.off("battle_results");
         };
-    }, [socket, room.id]);
+    }, [socket, room.id, currentUser.id, currentUser.name, guildId, router, handleHostExecution, startAnimationSequence]);
 
 
     const handleToggleReady = () => {
@@ -466,7 +463,7 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                                             {/* Previous Rolls */}
                                             {Array.from({ length: currentRound }).map((_, rIdx) => (
                                                 <div key={rIdx} className="relative group opacity-50 hover:opacity-100 transition-opacity">
-                                                    <img src={pResults?.skins[rIdx].image} alt="" className="w-full aspect-square object-contain bg-white/5 rounded-xl border border-white/5" />
+                                                    <img src={pResults?.skins[rIdx].image} alt={pResults?.skins[rIdx].name} className="w-full aspect-square object-contain bg-white/5 rounded-xl border border-white/5" />
                                                     <div className="absolute bottom-1 left-1 px-1 bg-black/60 rounded text-[8px] font-bold">
                                                         {formatRupiah(pResults!.skins[rIdx].marketPrice, false)}
                                                     </div>
@@ -489,7 +486,7 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                                                 <div className="col-span-full border-t border-white/5 pt-4 mt-2 flex items-center justify-between">
                                                     <div className="flex -space-x-3 overflow-hidden">
                                                         {pResults?.skins.slice(0, 5).map((s, i) => (
-                                                            <img key={i} src={s.image} className="inline-block h-8 w-8 rounded-full ring-2 ring-background bg-white/5 border border-white/10" />
+                                                            <img key={i} src={s.image} alt={s.name} className="inline-block h-8 w-8 rounded-full ring-2 ring-background bg-white/5 border border-white/10" />
                                                         ))}
                                                         {pResults!.skins.length > 5 && (
                                                             <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-background bg-muted text-[8px] font-black">
@@ -525,7 +522,7 @@ export const BattleRoomView = ({ room: initialRoom, guildId, currentUser }: Batt
                                         <>
                                             <div className="relative">
                                                 {p.avatar ? (
-                                                    <img src={p.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/5" />
+                                                    <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/5" />
                                                 ) : (
                                                     <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center font-black text-2xl uppercase">{p.name[0]}</div>
                                                 )}

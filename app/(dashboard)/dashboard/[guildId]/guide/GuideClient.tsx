@@ -7,13 +7,10 @@ import {
     Gamepad2,
     MousePointer2,
     TrendingUp,
-    Store,
     Swords,
     Coins,
     Zap,
-    Trophy,
     Terminal,
-    ChevronRight,
     HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";

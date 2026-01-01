@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Coins, Trophy, RotateCw, Plus, Minus, Zap } from "lucide-react";
 import { spinSlotsAction } from "@/app/actions/slots";
-import { SymbolID, SYMBOLS } from "@/lib/slots";
+import { SymbolID } from "@/lib/slots";
 import { formatRupiah, formatNumber, parseBet } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -23,7 +23,7 @@ const SymbolIcon = memo(({ id, className }: { id: SymbolID, className?: string }
 });
 SymbolIcon.displayName = "SymbolIcon";
 
-export default function SlotsClient({ guildId, initialWallet }: { guildId: string; initialWallet: number }) {
+export default function SlotsClient({ guildId: _guildId, initialWallet }: { guildId: string; initialWallet: number }) {
     const { toast } = useToast();
     const [wallet, setWallet] = useState(initialWallet);
     const [bet, setBet] = useState(10000);

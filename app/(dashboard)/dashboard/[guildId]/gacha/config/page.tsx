@@ -1,6 +1,4 @@
 import { getGuildGachaConfig } from "@/app/actions/gacha";
-import { GachaConfigEditor } from "@/components/gacha/GachaConfigEditor";
-import { UserGachaEditor } from "@/components/gacha/UserGachaEditor";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";

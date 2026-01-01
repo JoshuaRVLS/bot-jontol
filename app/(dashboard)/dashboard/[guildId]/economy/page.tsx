@@ -2,11 +2,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { TrendingUp, Wallet, Landmark, BarChart3, Coins } from "lucide-react";
+import { Wallet, Landmark, BarChart3, Coins } from "lucide-react";
 import BalanceManager from "@/components/economy/BalanceManager";
 
 export default async function EconomyPage({ params }: { params: Promise<{ guildId: string }> }) {
-    const { guildId } = await params;
+    await params; // consume params
     const session: any = await getServerSession(authOptions);
     if (!session) redirect("/");
 

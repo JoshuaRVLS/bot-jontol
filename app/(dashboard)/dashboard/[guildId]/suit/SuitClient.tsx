@@ -461,7 +461,7 @@ export default function SuitClient({
                                         <div className="flex -space-x-3">
                                             {room.participants.map((p, i) => (
                                                 <div key={i} className="w-10 h-10 rounded-full border-2 border-[#0a0b0e] overflow-hidden bg-white/10">
-                                                    {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : <UserIcon className="w-full h-full p-2 text-white/40" />}
+                                                    {p.avatar ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" /> : <UserIcon className="w-full h-full p-2 text-white/40" />}
                                                 </div>
                                             ))}
                                             {[...Array(2 - room.participants.length)].map((_, i) => (
@@ -643,7 +643,7 @@ function PlayerSection({
                     "w-24 h-24 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-4 bg-white/5",
                     isMe ? "border-primary/50" : "border-white/10"
                 )}>
-                    {player.avatar ? <img src={player.avatar} alt="" className="w-full h-full object-cover" /> : <UserIcon className="w-full h-full p-6 text-white/20" />}
+                    {player.avatar ? <img src={player.avatar} alt={player.name} className="w-full h-full object-cover" /> : <UserIcon className="w-full h-full p-6 text-white/20" />}
                 </div>
                 {player.ready && status === "waiting" && (
                     <div className="absolute -bottom-2 -right-2 bg-green-500 text-black px-4 py-1 rounded-full text-[10px] font-black italic uppercase tracking-widest shadow-lg">READY</div>

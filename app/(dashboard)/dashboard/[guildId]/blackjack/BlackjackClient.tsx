@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Coins, Swords, RefreshCw, Trophy, AlertTriangle, User as UserIcon, Shield, Zap, Info, HandIcon, Plus, Minus, Check, Play } from "lucide-react";
-import { startBJAction, hitBJAction, standBJAction, doubleBJAction, surrenderBJAction, BlackjackState, Card, Suit, Rank } from "@/app/actions/blackjack";
+import { Coins, RefreshCw, Trophy, AlertTriangle, User as UserIcon, Zap, HandIcon, Plus, Minus, Play } from "lucide-react";
+import { startBJAction, hitBJAction, standBJAction, doubleBJAction, surrenderBJAction, BlackjackState, Suit, Rank } from "@/app/actions/blackjack";
 import { formatRupiah, formatNumber, parseBet } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -61,14 +61,15 @@ const CardBack = () => (
     </motion.div>
 );
 
-export default function BlackjackClient({ guildId, initialWallet }: BlackjackClientProps) {
+export default function BlackjackClient({ initialWallet }: BlackjackClientProps) {
     const { toast } = useToast();
     const [gameState, setGameState] = useState<BlackjackState | null>(null);
     const [wallet, setWallet] = useState(initialWallet);
     const [bet, setBet] = useState(10000);
     const [betInput, setBetInput] = useState("10000");
     const [loading, setLoading] = useState(false);
-    const [isDealing, setIsDealing] = useState(false);
+    // Removed isDealing as it was unused in render
+    // const [isDealing, setIsDealing] = useState(false);
 
     useEffect(() => {
         setBetInput(bet.toString());
@@ -86,17 +87,14 @@ export default function BlackjackClient({ guildId, initialWallet }: BlackjackCli
         if (wallet < bet) return toast("Saldo gak cukup!", "error");
 
         setLoading(true);
-        setIsDealing(true);
         const result = await startBJAction(bet);
         setLoading(false);
 
         if (result.error) {
             toast(result.error, "error");
-            setIsDealing(false);
         } else if (result.state) {
             setGameState(result.state);
             setWallet(prev => prev - bet);
-            setTimeout(() => setIsDealing(false), 1000);
         }
     };
 

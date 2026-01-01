@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, memo, useMemo } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Keyboard, Users, Trophy, Timer, Zap,
-    Crown, Loader2, Play, CheckCircle2,
-    ArrowRight, Settings2, ShieldCheck, Flag, Plus
+    Keyboard, Users, Zap,
+    Play, CheckCircle2,
+    Flag, Plus
 } from "lucide-react";
 import {
     getTypingRoomsAction,
@@ -17,7 +17,7 @@ import {
     finishTypingRaceAction,
     leaveTypingRoomAction
 } from "@/app/actions/typing";
-import { formatRupiah, formatNumber, parseBet } from "@/lib/format";
+import { formatRupiah, parseBet } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 
@@ -79,13 +79,13 @@ interface Participant {
     finishTime?: number;
 }
 
-export default function TypingClient({ guildId, userId, userName, userAvatar, initialWallet }: any) {
+export default function TypingClient({ guildId, userId, userName, initialWallet }: any) {
     const { toast } = useToast();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [wallet, setWallet] = useState(initialWallet);
     const [rooms, setRooms] = useState<any[]>([]);
     const [activeRoom, setActiveRoom] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [customBet, setCustomBet] = useState(10000);
     const [customBetInput, setCustomBetInput] = useState("10000");
 
@@ -127,6 +127,21 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
         return () => { s.disconnect(); };
     }, [guildId]);
 
+    const startCountdown = () => {
+        setCountdown(3);
+        const timer = setInterval(() => {
+            setCountdown((prev: number | null) => {
+                if (prev === 1) {
+                    clearInterval(timer);
+                    setStartTime(Date.now());
+                    setTimeout(() => inputRef.current?.focus(), 10);
+                    return null;
+                }
+                return prev ? prev - 1 : null;
+            });
+        }, 1000);
+    };
+
     // Active room updates
     useEffect(() => {
         if (!socket || !activeRoom) return;
@@ -166,20 +181,7 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
         };
     }, [socket, activeRoom, startTime, countdown, userId]);
 
-    const startCountdown = () => {
-        setCountdown(3);
-        const timer = setInterval(() => {
-            setCountdown((prev: number | null) => {
-                if (prev === 1) {
-                    clearInterval(timer);
-                    setStartTime(Date.now());
-                    setTimeout(() => inputRef.current?.focus(), 10);
-                    return null;
-                }
-                return prev ? prev - 1 : null;
-            });
-        }, 1000);
-    };
+    // Countdown Logic removed from here as it was moved up to follow hoisting rules
 
     const handleCreateRoom = async (betAmount: number) => {
         if (wallet < betAmount) return toast("Saldo gak cukup!", "error");
@@ -229,8 +231,21 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
         }
     };
 
-    const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!startTime || isFinished || !activeRoom.targetText) return;
+    const handleFinished = useCallback(async (finalWpm: number) => {
+        setIsFinished(true);
+        socket?.emit("typing_finished", { roomId: activeRoom?.id, userId, wpm: finalWpm });
+
+        if (activeRoom?.status === "running") {
+            const res = await finishTypingRaceAction(activeRoom.id, userId);
+            if (res.success && typeof res.prize === 'number') {
+                toast(`SLOT RACE WIN! +${formatRupiah(res.prize)}`, "success");
+                setWallet((prev: number) => prev + (res.prize as number));
+            }
+        }
+    }, [socket, activeRoom, userId, toast]);
+
+    const handleTyping = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!startTime || isFinished || !activeRoom?.targetText) return;
         const val = e.target.value;
         const target = activeRoom.targetText;
 
@@ -243,9 +258,10 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
 
         const progressPercent = (progressCount / target.length) * 100;
 
-        // WPM calculation
-        const timeElapsed = (Date.now() - startTime) / 60000;
-        const currentWpm = Math.round((val.split(" ").length) / timeElapsed) || 0;
+        // WPM calculation - use performance.now() relative to startTime
+        const currentTime = performance.now();
+        const timeElapsed = (currentTime - (startTime || currentTime)) / 60000;
+        const currentWpm = timeElapsed > 0 ? Math.round((val.split(" ").length) / timeElapsed) : 0;
 
         setTypedText(val);
         setWpm(currentWpm);
@@ -260,20 +276,7 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
         if (val === target) {
             handleFinished(currentWpm);
         }
-    };
-
-    const handleFinished = async (finalWpm: number) => {
-        setIsFinished(true);
-        socket?.emit("typing_finished", { roomId: activeRoom.id, userId, wpm: finalWpm });
-
-        if (activeRoom.status === "running") {
-            const res = await finishTypingRaceAction(activeRoom.id, userId);
-            if (res.success && typeof res.prize === 'number') {
-                toast(`SLOT RACE WIN! +${formatRupiah(res.prize)}`, "success");
-                setWallet((prev: number) => prev + (res.prize as number));
-            }
-        }
-    };
+    }, [startTime, isFinished, activeRoom, socket, userId, handleFinished]);
 
     const handleLeave = async () => {
         if (!activeRoom) return;
@@ -370,7 +373,7 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
                             <div className="flex gap-2">
                                 {activeRoom.participants.map((p: any) => (
                                     <div key={p.id} className="relative">
-                                        <img src={p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} className="w-10 h-10 rounded-full border-2 border-white/10" alt={p.name} />
+                                        <img src={p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} className="w-10 h-10 rounded-full border-2 border-white/10" alt={`Avatar of ${p.name}`} />
                                         {p.ready && <CheckCircle2 className="absolute -bottom-1 -right-1 w-4 h-4 text-green-400 bg-[#0F0F13] rounded-full" />}
                                     </div>
                                 ))}
@@ -449,7 +452,7 @@ export default function TypingClient({ guildId, userId, userName, userAvatar, in
                                 <div className="flex justify-between items-center">
                                     <div className="flex -space-x-2">
                                         {room.participants.map((p: any) => (
-                                            <img key={p.id} src={p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} className="w-8 h-8 rounded-full border-2 border-[#0F0F13]" />
+                                            <img key={p.id} src={p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} className="w-8 h-8 rounded-full border-2 border-[#0F0F13]" alt={p.name || "Participant"} />
                                         ))}
                                         {Array.from({ length: 4 - room.participants.length }).map((_, i) => (
                                             <div key={i} className="w-8 h-8 rounded-full border-2 border-dashed border-white/5 flex items-center justify-center text-white/5 bg-transparent" />

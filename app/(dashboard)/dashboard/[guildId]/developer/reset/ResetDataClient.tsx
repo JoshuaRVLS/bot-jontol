@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type ResetMode = "individual" | "global";
 
-export default function ResetDataClient({ guildId }: { guildId: string }) {
+export default function ResetDataClient({ guildId: _guildId }: { guildId: string }) {
     const [mode, setMode] = useState<ResetMode>("individual");
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<UserData[]>([]);

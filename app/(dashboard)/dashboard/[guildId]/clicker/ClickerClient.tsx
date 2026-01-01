@@ -23,7 +23,7 @@ interface ClickerClientProps {
 
 const MILESTONES = [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
 
-export default function ClickerClient({ guildId, initialWallet }: ClickerClientProps) {
+export default function ClickerClient({ guildId: _guildId, initialWallet }: ClickerClientProps) {
     const [wallet, setWallet] = useState(initialWallet);
     const [totalClicks, setTotalClicks] = useState(0);
     const [sessionEarnings, setSessionEarnings] = useState(0);

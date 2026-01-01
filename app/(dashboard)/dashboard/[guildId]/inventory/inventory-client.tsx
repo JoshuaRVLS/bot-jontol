@@ -22,7 +22,7 @@ interface InventoryClientProps {
 
 const RARITY_ORDER = ["Gold", "Covert", "Classified", "Restricted", "Mil-Spec", "Industrial", "Consumer"];
 
-export const InventoryClient = ({ initialSkins, userId }: InventoryClientProps) => {
+export const InventoryClient = ({ initialSkins }: InventoryClientProps) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [rarityFilter, setRarityFilter] = useState<string>("All");
     const [sortBy, setSortBy] = useState<"price-desc" | "price-asc" | "rarity">("price-desc");

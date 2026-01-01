@@ -128,7 +128,7 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
 
             {/* Games Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {games.map((game, i) => (
+                {games.map((game) => (
                     <Link
                         key={game.href}
                         href={game.href}
@@ -143,8 +143,8 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
                                 </div>
                                 {game.badge && (
                                     <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg ${game.badge === 'HOT' ? 'bg-orange-500 text-white shadow-orange-500/20' :
-                                            game.badge === 'DUEL' ? 'bg-red-500 text-white shadow-red-500/20' :
-                                                'bg-purple-500 text-white shadow-purple-500/20'
+                                        game.badge === 'DUEL' ? 'bg-red-500 text-white shadow-red-500/20' :
+                                            'bg-purple-500 text-white shadow-purple-500/20'
                                         }`}>
                                         {game.badge}
                                     </span>

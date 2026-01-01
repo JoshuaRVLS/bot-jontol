@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Plus,
@@ -11,7 +11,6 @@ import {
     Swords,
     Trophy,
     Eye,
-    ChevronRight,
     X,
     Zap
 } from "lucide-react";
@@ -55,9 +54,6 @@ const CASE_OPTIONS: { id: CaseType; label: string; color: string }[] = [
 
 export const BattleLobby = ({
     guildId,
-    userId,
-    userName,
-    userAvatar,
     userWallet,
     initialRooms
 }: BattleLobbyProps) => {
@@ -188,7 +184,7 @@ export const BattleLobby = ({
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             {room.hostAvatar ? (
-                                                <img src={room.hostAvatar} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                                                <img src={room.hostAvatar} alt={room.hostName} className="w-10 h-10 rounded-xl object-cover" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-black text-xs">
                                                     {room.hostName[0]}

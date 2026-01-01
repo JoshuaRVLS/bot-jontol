@@ -13,7 +13,7 @@ export default async function GuidePage({
         redirect("/");
     }
 
-    const { guildId } = await params;
+    await params; // consume params
 
     return <GuideClient />;
 }
