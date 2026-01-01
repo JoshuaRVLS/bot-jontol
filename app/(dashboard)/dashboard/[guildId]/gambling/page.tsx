@@ -9,10 +9,10 @@ import {
     Dices,
     Keyboard,
     Gamepad2,
-    TrendingUp,
     Wallet,
     ArrowRight,
-    Trophy
+    Trophy,
+    Sparkles
 } from "lucide-react";
 import Link from "next/link";
 
@@ -27,8 +27,8 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
 
     if (!userData) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-muted/10 rounded-3xl border border-dashed border-border">
-                <p className="text-muted-foreground font-bold">Data pengguna tidak ditemukan.</p>
+            <div className="flex flex-col items-center justify-center py-20 casino-card rounded-3xl">
+                <p className="text-gray-400 font-bold">Data pengguna tidak ditemukan.</p>
             </div>
         );
     }
@@ -39,88 +39,99 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
             description: "Buka case CS:GO dengan sistem pity terjamin.",
             icon: Zap,
             href: `/dashboard/${guildId}/gacha`,
-            color: "from-amber-400 to-orange-600",
-            shadow: "shadow-orange-500/20",
-            badge: "HOT"
+            gradient: "from-amber-400 to-orange-600",
+            glow: "shadow-amber-500/20"
         },
         {
             title: "Gacha Battle",
-            description: "Duel buka case melawan player lain. Yang menang ambil semua.",
+            description: "Duel buka case melawan player lain.",
             icon: Swords,
             href: `/dashboard/${guildId}/battle`,
-            color: "from-red-500 to-rose-700",
-            shadow: "shadow-red-500/20",
-            badge: "DUEL"
+            gradient: "from-red-500 to-rose-700",
+            glow: "shadow-red-500/20",
+            badge: "PVP"
         },
         {
             title: "Blackjack",
-            description: "Main kartu melawan dealer untuk menang taruhan.",
+            description: "Main kartu melawan dealer.",
             icon: Coins,
             href: `/dashboard/${guildId}/blackjack`,
-            color: "from-emerald-400 to-teal-700",
-            shadow: "shadow-emerald-500/20",
+            gradient: "from-emerald-400 to-teal-600",
+            glow: "shadow-emerald-500/20"
         },
         {
             title: "Slots Machine",
-            description: "Putar mesin slot dan coba keberuntunganmu.",
+            description: "Putar mesin slot dan coba keberuntungan.",
             icon: Dices,
             href: `/dashboard/${guildId}/slots`,
-            color: "from-indigo-500 to-blue-700",
-            shadow: "shadow-indigo-500/20",
+            gradient: "from-purple-500 to-violet-700",
+            glow: "shadow-purple-500/20"
         },
         {
             title: "Typing Race",
             description: "Lomba ketik cepat melawan pemain lain.",
             icon: Keyboard,
             href: `/dashboard/${guildId}/typing`,
-            color: "from-purple-500 to-violet-800",
-            shadow: "shadow-purple-500/20",
+            gradient: "from-blue-500 to-indigo-700",
+            glow: "shadow-blue-500/20",
             badge: "MULTIPLAYER"
         },
         {
-            title: "Suit Multiplayer",
-            description: "Gunting Batu Kertas melawan pemain lain.",
+            title: "Suit",
+            description: "Gunting Batu Kertas multiplayer.",
             icon: Gamepad2,
             href: `/dashboard/${guildId}/suit`,
-            color: "from-slate-500 to-slate-800",
-            shadow: "shadow-slate-500/20",
+            gradient: "from-slate-400 to-slate-600",
+            glow: "shadow-slate-500/20"
         }
     ];
 
     return (
-        <div className="space-y-12 pb-20">
-            {/* Header section with stats */}
-            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative p-10 rounded-[60px] bg-white/[0.02] border border-white/5 overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-red-500/5 blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 blur-[80px] pointer-events-none" />
+        <div className="space-y-10 pb-20">
+            {/* Header */}
+            <header className="relative p-8 md:p-12 rounded-[40px] casino-card overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-500/5 blur-[80px] rounded-full" />
 
-                <div className="relative z-10 flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/20">
-                            <Gamepad2 size={24} className="text-white" />
-                        </div>
-                        <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-white">
-                            GAMBLING <span className="text-red-500">CENTER</span>
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground font-black uppercase tracking-[0.4em] text-xs opacity-40 border-l-2 border-red-500 pl-4 py-1">
-                        Pusat game dan hiburan
-                    </p>
-                </div>
+                {/* Card Symbols Decoration */}
+                <div className="absolute top-4 right-8 text-amber-500/10 text-6xl hidden md:block">♠</div>
+                <div className="absolute bottom-4 right-20 text-red-500/10 text-4xl hidden md:block">♦</div>
 
-                <div className="flex flex-wrap items-center gap-4 relative z-10">
-                    <div className="flex items-center gap-4 px-8 py-4 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-md">
-                        <Wallet className="text-emerald-400" size={24} />
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">DOMPET</p>
-                            <p className="text-xl font-black text-white">Rp {userData.wallet.toLocaleString()}</p>
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30">
+                                <Dices size={28} className="text-black" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <Sparkles size={14} className="text-amber-400" />
+                                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Premium</span>
+                                </div>
+                                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">
+                                    Casino
+                                </h1>
+                            </div>
                         </div>
+                        <p className="text-gray-500 text-sm font-medium max-w-md">
+                            Pilih game favorit dan mulai bermain
+                        </p>
                     </div>
-                    <div className="flex items-center gap-4 px-8 py-4 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-md">
-                        <Trophy className="text-amber-400" size={24} />
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">SC PITY</p>
-                            <p className="text-xl font-black text-white">{userData.scPity}</p>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-black/40 border border-amber-500/20">
+                            <Wallet className="text-amber-400" size={24} />
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Wallet</p>
+                                <p className="text-xl font-black text-white">Rp {userData.wallet.toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-black/40 border border-amber-500/20">
+                            <Trophy className="text-amber-400" size={24} />
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Pity</p>
+                                <p className="text-xl font-black text-white">{userData.scPity}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -132,36 +143,31 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
                     <Link
                         key={game.href}
                         href={game.href}
-                        className="group relative"
+                        className="group"
                     >
-                        <div className={`glass-card h-full p-8 rounded-[48px] border-white/5 group-hover:border-white/20 transition-all duration-500 group-hover:-translate-y-2 overflow-hidden flex flex-col shadow-2xl ${game.shadow}`}>
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl group-hover:bg-white/10 transition-all" />
-
-                            <div className="flex justify-between items-start mb-8">
-                                <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${game.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                                    <game.icon size={32} className="text-white drop-shadow-md" />
+                        <div className={`casino-card h-full p-8 rounded-3xl group-hover:border-amber-500/30 transition-all duration-300 group-hover:-translate-y-1 flex flex-col ${game.glow}`}>
+                            <div className="flex justify-between items-start mb-6">
+                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${game.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                    <game.icon size={28} className="text-white" />
                                 </div>
                                 {game.badge && (
-                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg ${game.badge === 'HOT' ? 'bg-orange-500 text-white shadow-orange-500/20' :
-                                        game.badge === 'DUEL' ? 'bg-red-500 text-white shadow-red-500/20' :
-                                            'bg-purple-500 text-white shadow-purple-500/20'
-                                        }`}>
+                                    <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
                                         {game.badge}
                                     </span>
                                 )}
                             </div>
 
-                            <div className="space-y-3">
-                                <h3 className="text-2xl font-black italic uppercase tracking-tighter group-hover:text-primary transition-colors text-white">
+                            <div className="flex-1">
+                                <h3 className="text-xl font-black uppercase tracking-tight text-white group-hover:text-amber-400 transition-colors mb-2">
                                     {game.title}
                                 </h3>
-                                <p className="text-sm text-muted-foreground leading-relaxed font-medium">
+                                <p className="text-sm text-gray-500 leading-relaxed">
                                     {game.description}
                                 </p>
                             </div>
 
-                            <div className="mt-8 flex items-center gap-2 text-white/40 font-black uppercase text-[10px] tracking-widest group-hover:text-white transition-colors">
-                                MAIN SEKARANG
+                            <div className="mt-6 flex items-center gap-2 text-gray-600 text-xs font-bold uppercase tracking-widest group-hover:text-amber-400 transition-colors">
+                                Main Sekarang
                                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                             </div>
                         </div>
@@ -169,20 +175,20 @@ export default async function GamblingPage({ params }: { params: Promise<{ guild
                 ))}
             </div>
 
-            {/* Secondary CTA or Info */}
-            <div className="glass-card p-10 rounded-[50px] bg-gradient-to-r from-red-500/10 to-indigo-500/10 border-white/5 flex flex-col md:flex-row items-center gap-8 text-center md:text-left transition-all hover:bg-white/[0.05]">
-                <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center animate-pulse">
-                    <TrendingUp size={40} className="text-red-500" />
+            {/* Leaderboard CTA */}
+            <div className="casino-card p-8 md:p-10 rounded-3xl flex flex-col md:flex-row items-center gap-8">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center">
+                    <Trophy size={36} className="text-amber-400" />
                 </div>
-                <div className="flex-1 space-y-2">
-                    <h3 className="text-xl font-black uppercase italic text-white tracking-widest">Lihat Statistik</h3>
-                    <p className="text-muted-foreground text-sm font-medium">Kemenangan akan masuk ke dompet global bot.</p>
+                <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-xl font-black uppercase text-white mb-2">Leaderboard</h3>
+                    <p className="text-gray-500 text-sm">Lihat peringkat dan statistik pemain.</p>
                 </div>
                 <Link
                     href={`/dashboard/${guildId}/leaderboard`}
-                    className="px-10 py-5 rounded-3xl bg-white text-black font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-xl shadow-white/10"
+                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black uppercase tracking-wider text-sm hover:scale-105 transition-all shadow-lg shadow-amber-500/20"
                 >
-                    LIHAT LEADERBOARD
+                    Lihat Leaderboard
                 </Link>
             </div>
         </div>

@@ -2,7 +2,7 @@
    - Environments: .env
 
    Creating an optimized production build ...
- Γ£ô Compiled successfully in 5.0s
+ Γ£ô Compiled successfully in 7.0s
    Skipping linting
    Checking validity of types ...
    Collecting page data ...
@@ -15,32 +15,32 @@
    Collecting build traces ...
 
 Route (app)                                  Size  First Load JS
-Γöî Γùï /                                     5.89 kB         159 kB
+Γöî Γùï /                                     2.69 kB         154 kB
 Γö£ Γùï /_not-found                             990 B         103 kB
 Γö£ ╞Æ /api/auth/[...nextauth]                 144 B         102 kB
 Γö£ ╞Æ /dashboard                              179 B         105 kB
-Γö£ ╞Æ /dashboard/[guildId]                  2.98 kB         152 kB
-Γö£ ╞Æ /dashboard/[guildId]/battle           6.27 kB         169 kB
-Γö£ ╞Æ /dashboard/[guildId]/battle/[roomId]  7.85 kB         171 kB
-Γö£ ╞Æ /dashboard/[guildId]/blackjack        5.43 kB         157 kB
-Γö£ ╞Æ /dashboard/[guildId]/clicker          7.18 kB         156 kB
+Γö£ ╞Æ /dashboard/[guildId]                  2.98 kB         150 kB
+Γö£ ╞Æ /dashboard/[guildId]/battle           6.27 kB         167 kB
+Γö£ ╞Æ /dashboard/[guildId]/battle/[roomId]  7.85 kB         169 kB
+Γö£ ╞Æ /dashboard/[guildId]/blackjack        5.43 kB         155 kB
+Γö£ ╞Æ /dashboard/[guildId]/clicker          7.18 kB         154 kB
 Γö£ ╞Æ /dashboard/[guildId]/commands           144 B         102 kB
-Γö£ ╞Æ /dashboard/[guildId]/developer/reset  5.25 kB         156 kB
-Γö£ ╞Æ /dashboard/[guildId]/economy          4.21 kB         145 kB
-Γö£ ╞Æ /dashboard/[guildId]/gacha            7.97 kB         149 kB
-Γö£ ╞Æ /dashboard/[guildId]/gacha/config     5.33 kB         148 kB
+Γö£ ╞Æ /dashboard/[guildId]/developer/reset  5.25 kB         154 kB
+Γö£ ╞Æ /dashboard/[guildId]/economy          4.21 kB         143 kB
+Γö£ ╞Æ /dashboard/[guildId]/gacha            7.97 kB         147 kB
+Γö£ ╞Æ /dashboard/[guildId]/gacha/config     5.33 kB         146 kB
 Γö£ ╞Æ /dashboard/[guildId]/gambling           179 B         105 kB
-Γö£ ╞Æ /dashboard/[guildId]/guide            2.81 kB         154 kB
-Γö£ ╞Æ /dashboard/[guildId]/inventory        4.73 kB         165 kB
-Γö£ ╞Æ /dashboard/[guildId]/invest           4.67 kB         156 kB
-Γö£ ╞Æ /dashboard/[guildId]/leaderboard      5.17 kB         154 kB
+Γö£ ╞Æ /dashboard/[guildId]/guide            2.65 kB         152 kB
+Γö£ ╞Æ /dashboard/[guildId]/inventory        4.72 kB         163 kB
+Γö£ ╞Æ /dashboard/[guildId]/invest           4.68 kB         154 kB
+Γö£ ╞Æ /dashboard/[guildId]/leaderboard      5.17 kB         152 kB
 Γö£ ╞Æ /dashboard/[guildId]/market            111 kB         220 kB
-Γö£ ╞Æ /dashboard/[guildId]/settings         4.59 kB         153 kB
-Γö£ ╞Æ /dashboard/[guildId]/shop             2.55 kB         163 kB
-Γö£ ╞Æ /dashboard/[guildId]/slots            4.23 kB         156 kB
-Γö£ ╞Æ /dashboard/[guildId]/suit             8.44 kB         171 kB
-Γö£ ╞Æ /dashboard/[guildId]/typing           7.27 kB         170 kB
-Γöö ╞Æ /dashboard/[guildId]/users            4.29 kB         147 kB
+Γö£ ╞Æ /dashboard/[guildId]/settings         4.59 kB         151 kB
+Γö£ ╞Æ /dashboard/[guildId]/shop             2.55 kB         161 kB
+Γö£ ╞Æ /dashboard/[guildId]/slots            4.24 kB         154 kB
+Γö£ ╞Æ /dashboard/[guildId]/suit             8.44 kB         169 kB
+Γö£ ╞Æ /dashboard/[guildId]/typing           7.27 kB         168 kB
+Γöö ╞Æ /dashboard/[guildId]/users            4.29 kB         145 kB
 + First Load JS shared by all              102 kB
   Γö£ chunks/1684-643e58bc671e259e.js       46.4 kB
   Γö£ chunks/4bd1b696-16ae6d856f3c6e3d.js   53.2 kB
