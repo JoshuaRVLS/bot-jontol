@@ -35,7 +35,18 @@ export default {
 
             const items = ["🍒", "🍋", "🍇", "🍉", "💎", "7️⃣"];
 
-            // Generate 3 random items
+            // Spinning animation
+            for (let i = 0; i < 3; i++) {
+                const spinRow = [
+                    items[Math.floor(Math.random() * items.length)],
+                    items[Math.floor(Math.random() * items.length)],
+                    items[Math.floor(Math.random() * items.length)]
+                ];
+                await interaction.editReply(`🎰 ** SPINNING... ** 🎰\n------------------\n| ${spinRow[0]} | ${spinRow[1]} | ${spinRow[2]} |\n------------------`);
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            // Generate 3 final random items
             const row = [];
             for (let i = 0; i < 3; i++) {
                 row.push(items[Math.floor(Math.random() * items.length)]);
@@ -66,7 +77,7 @@ export default {
                 msg += `\n ** ZONK! ** Lu kalah ** ${formatRupiah(amount)}**.Coba lagi!`;
             }
 
-            await interaction.followUp(msg);
+            await interaction.editReply(msg);
 
         } catch (error) {
             console.error(error);
